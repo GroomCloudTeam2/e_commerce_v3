@@ -1,4 +1,4 @@
-package com.groom.product.infrastructure.client.Classification.dto;
+package com.groom.product.review.infrastructure.client.Classification.dto;
 
 
 public record AiFeignResponse(

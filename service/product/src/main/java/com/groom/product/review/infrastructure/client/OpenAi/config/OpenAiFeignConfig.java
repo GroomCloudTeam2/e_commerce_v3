@@ -1,11 +1,10 @@
-package com.groom.product.infrastructure.client.OpenAi.config;
+package com.groom.product.review.infrastructure.client.OpenAi.config;
 
+import feign.RequestInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
-
-import feign.RequestInterceptor;
 
 @Configuration
 public class OpenAiFeignConfig {

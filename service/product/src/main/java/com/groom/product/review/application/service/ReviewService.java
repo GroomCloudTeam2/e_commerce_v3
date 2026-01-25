@@ -11,10 +11,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.groom.product.infrastructure.client.Classification.AiClient;
 import com.groom.product.review.application.event.ReviewCreatedEvent;
 import com.groom.product.review.application.validator.OrderReviewValidator;
 import com.groom.product.review.domain.entity.ProductRatingEntity;
+import com.groom.product.review.infrastructure.client.Classification.AiClient;
 import com.groom.product.review.domain.entity.ReviewCategory;
 import com.groom.product.review.domain.entity.ReviewEntity;
 import com.groom.product.review.domain.entity.ReviewLikeEntity;
