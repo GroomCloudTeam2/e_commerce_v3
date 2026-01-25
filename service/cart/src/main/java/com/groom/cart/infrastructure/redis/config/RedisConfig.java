@@ -1,17 +1,17 @@
-package com.groom.product.review.infrastructure.redis.config;
+package com.groom.cart.infrastructure.redis.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-
 @Configuration
-public class ReviewRedisConfig {
+public class RedisConfig {
 
     @Bean
-    public RedisTemplate<String, Object> reviewRedisTemplate(
+    public RedisTemplate<String, Object> redisTemplate(
         RedisConnectionFactory factory,
         StringRedisSerializer stringRedisSerializer,
         GenericJackson2JsonRedisSerializer jsonRedisSerializer
@@ -20,8 +20,17 @@ public class ReviewRedisConfig {
         template.setConnectionFactory(factory);
 
         template.setKeySerializer(stringRedisSerializer);
+        template.setHashKeySerializer(stringRedisSerializer);
         template.setValueSerializer(jsonRedisSerializer);
+        template.setHashValueSerializer(jsonRedisSerializer);
 
         return template;
+    }
+
+    @Bean
+    public StringRedisTemplate stringRedisTemplate(
+        RedisConnectionFactory factory
+    ) {
+        return new StringRedisTemplate(factory);
     }
 }

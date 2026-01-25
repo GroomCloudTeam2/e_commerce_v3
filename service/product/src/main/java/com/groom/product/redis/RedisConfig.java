@@ -1,4 +1,4 @@
-package com.groom.common.infrastructure.redis;
+package com.groom.product.redis;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
