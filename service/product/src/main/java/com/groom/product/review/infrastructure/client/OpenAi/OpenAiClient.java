@@ -16,7 +16,7 @@ public class OpenAiClient {
 
 	public OpenAiClient(
 		OpenAiFeignClient feignClient,
-		@Value("${ai.openai.model}") String model
+		@Value("${external.ai.openai.model}") String model
 	) {
 		this.feignClient = feignClient;
 		this.model = model;

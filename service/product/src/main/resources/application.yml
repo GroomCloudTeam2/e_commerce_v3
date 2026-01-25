@@ -40,9 +40,10 @@ external:
     url: http://localhost:8083
   ai:
     classification:
-      url: localhost:8090
+      url: http://localhost:8090
     openai:
       api-key: your-openai-api-key
+      model: gpt-4o-mini
       base-url: https://api.openai.com
 
 logging:

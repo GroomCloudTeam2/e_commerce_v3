@@ -9,7 +9,7 @@ import org.springframework.http.HttpHeaders;
 @Configuration
 public class OpenAiFeignConfig {
 
-	@Value("${ai.openai.api-key}")
+	@Value("${external.ai.openai.api-key}")  // ✅ 여기만 바꿈
 	private String apiKey;
 
 	@Bean
