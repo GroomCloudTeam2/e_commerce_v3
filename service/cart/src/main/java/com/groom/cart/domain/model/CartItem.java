@@ -11,7 +11,8 @@ import lombok.Getter;
  * Cart 도메인에서 사용하는 장바구니 아이템 DTO
  * (Redis / Hash / TTL 모름)
  *
- */
+ *
+*/
 @Getter
 @AllArgsConstructor
 public class CartItem {
