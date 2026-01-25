@@ -3,8 +3,6 @@ pipeline {
 
     environment {
         GRADLE_USER_HOME = "${WORKSPACE}/.gradle"
-        JAVA_HOME = tool 'jdk17'
-        PATH = "${JAVA_HOME}/bin:${PATH}"
     }
 
     options {
