@@ -11,8 +11,6 @@ allprojects {
     repositories {
         mavenCentral()
     }
-
-
 }
 
 subprojects {
@@ -21,11 +19,20 @@ subprojects {
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'jacoco'
 
-
     java {
         toolchain {
             languageVersion = JavaLanguageVersion.of(17)
         }
+    }
+
+    // [중요!] 모든 서브 프로젝트의 bootJar를 기본적으로 비활성화
+    bootJar {
+        enabled = false
+    }
+
+    // 일반 jar 생성은 허용 (common 같은 모듈을 위해)
+    jar {
+        enabled = true
     }
 
     configurations {
@@ -45,10 +52,8 @@ subprojects {
     }
 
     dependencies {
-        // Common dependencies for all modules
         compileOnly 'org.projectlombok:lombok'
         annotationProcessor 'org.projectlombok:lombok'
-
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     }
@@ -65,13 +70,24 @@ subprojects {
         }
     }
 
-
-    // UTF-8 encoding
     compileJava.options.encoding = 'UTF-8'
     compileTestJava.options.encoding = 'UTF-8'
 }
 
-project(':service:common') {
-    bootJar.enabled = false
-    jar.enabled = true
+// 이 리스트에 실행 가능한 BootJAR 생성
+def bootableProjects = [
+        project(':service:user'),
+        project(':service:cart'),
+        project(':service:order'),
+        project(':service:payment'),
+        project(':service:product')
+]
+
+configure(bootableProjects) {
+    bootJar {
+        enabled = true
+    }
+    jar {
+        enabled = false
+    }
 }
