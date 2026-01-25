@@ -16,7 +16,6 @@ import com.groom.common.infrastructure.feign.config.FeignConfig;
  * - 상품 존재 여부
  * - 판매 가능 여부
  * - 재고 수량
- * 만 조회한다
  */
 @FeignClient(
     name = "product-service",
