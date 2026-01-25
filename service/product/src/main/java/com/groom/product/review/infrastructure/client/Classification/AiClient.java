@@ -1,13 +1,11 @@
-package com.groom.product.infrastructure.client.Classification;
+package com.groom.product.review.infrastructure.client.Classification;
 
-import org.springframework.stereotype.Component;
-
-import com.groom.product.infrastructure.client.Classification.dto.AiFeignRequest;
-import com.groom.product.infrastructure.client.Classification.dto.AiFeignResponse;
 import com.groom.product.review.domain.entity.ReviewCategory;
-
+import com.groom.product.review.infrastructure.client.Classification.dto.AiFeignRequest;
+import com.groom.product.review.infrastructure.client.Classification.dto.AiFeignResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component

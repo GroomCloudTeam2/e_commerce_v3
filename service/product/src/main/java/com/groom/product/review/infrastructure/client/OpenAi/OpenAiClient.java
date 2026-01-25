@@ -1,13 +1,12 @@
-package com.groom.product.infrastructure.client.OpenAi;
+package com.groom.product.review.infrastructure.client.OpenAi;
 
-import java.util.List;
-
+import com.groom.product.review.infrastructure.client.OpenAi.dto.ChatCompletionRequest;
+import com.groom.product.review.infrastructure.client.OpenAi.dto.ChatCompletionResponse;
+import com.groom.product.review.infrastructure.client.OpenAi.dto.Message;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.groom.product.infrastructure.client.OpenAi.dto.ChatCompletionRequest;
-import com.groom.product.infrastructure.client.OpenAi.dto.ChatCompletionResponse;
-import com.groom.product.infrastructure.client.OpenAi.dto.Message;
+import java.util.List;
 
 @Component
 public class OpenAiClient {

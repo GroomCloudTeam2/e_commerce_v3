@@ -1,4 +1,4 @@
-package com.groom.product.infrastructure.client.OpenAi.dto;
+package com.groom.product.review.infrastructure.client.OpenAi.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

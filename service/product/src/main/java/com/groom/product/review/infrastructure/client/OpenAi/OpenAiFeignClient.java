@@ -1,11 +1,10 @@
-package com.groom.product.infrastructure.client.OpenAi;
+package com.groom.product.review.infrastructure.client.OpenAi;
 
+import com.groom.product.review.infrastructure.client.OpenAi.config.OpenAiFeignConfig;
+import com.groom.product.review.infrastructure.client.OpenAi.dto.ChatCompletionRequest;
+import com.groom.product.review.infrastructure.client.OpenAi.dto.ChatCompletionResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
-
-import com.groom.product.infrastructure.client.OpenAi.config.OpenAiFeignConfig;
-import com.groom.product.infrastructure.client.OpenAi.dto.ChatCompletionRequest;
-import com.groom.product.infrastructure.client.OpenAi.dto.ChatCompletionResponse;
 
 @FeignClient(
 	name = "openai-client",
@@ -16,7 +15,7 @@ import com.groom.product.infrastructure.client.OpenAi.dto.ChatCompletionResponse
 public interface OpenAiFeignClient {
 
 	@PostMapping("/v1/chat/completions")
-	ChatCompletionResponse createChatCompletion(
+    ChatCompletionResponse createChatCompletion(
 		ChatCompletionRequest request
 	);
 }

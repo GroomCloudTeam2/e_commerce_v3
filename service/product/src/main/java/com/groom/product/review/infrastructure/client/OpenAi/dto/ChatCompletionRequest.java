@@ -1,9 +1,9 @@
-package com.groom.product.infrastructure.client.OpenAi.dto;
-
-import java.util.List;
+package com.groom.product.review.infrastructure.client.OpenAi.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+
+import java.util.List;
 
 @Getter
 @AllArgsConstructor

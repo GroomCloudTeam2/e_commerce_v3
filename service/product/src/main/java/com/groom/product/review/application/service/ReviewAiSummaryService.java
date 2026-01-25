@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import com.groom.product.infrastructure.client.OpenAi.OpenAiClient;
+import com.groom.product.review.infrastructure.client.OpenAi.OpenAiClient;
 import com.groom.product.product.domain.entity.Product;
 import com.groom.product.product.domain.repository.ProductRepository;
 import com.groom.product.review.application.support.AiReviewPromptBuilder;
