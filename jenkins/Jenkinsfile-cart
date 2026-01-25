@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+
+    environment {
+        GRADLE_USER_HOME = "${WORKSPACE}/.gradle"
+        JAVA_HOME = tool 'jdk17'
+        PATH = "${JAVA_HOME}/bin:${PATH}"
+    }
+
+    options {
+        timestamps()
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build cart module') {
+            steps {
+                sh './gradlew :cart:clean :cart:bootJar'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ cart 모듈 빌드 성공'
+        }
+        failure {
+            echo '❌ cart 모듈 빌드 실패'
+        }
+    }
+}

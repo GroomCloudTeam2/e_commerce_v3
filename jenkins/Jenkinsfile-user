@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+
+    environment {
+        GRADLE_USER_HOME = "${WORKSPACE}/.gradle"
+        JAVA_HOME = tool 'jdk17'
+        PATH = "${JAVA_HOME}/bin:${PATH}"
+    }
+
+    options {
+        timestamps()
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build user module') {
+            steps {
+                sh './gradlew :user:clean :user:bootJar'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ user 모듈 빌드 성공'
+        }
+        failure {
+            echo '❌ user 모듈 빌드 실패'
+        }
+    }
+}
