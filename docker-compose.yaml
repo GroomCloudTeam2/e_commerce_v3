@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  user:
+    build:
+      context: .
+      dockerfile: service/user/Dockerfile
+    image: "${ECR_NAME}/user-domain:${TAG}"
+    ports:
+      - "8081:8080"
+
+  cart:
+    build:
+      context: .
+      dockerfile: service/cart/Dockerfile
+    image: "${ECR_NAME}/cart-domain:${TAG}"
+    ports:
+      - "8082:8080"
+
+  order:
+    build:
+      context: .
+      dockerfile: service/order/Dockerfile
+    image: "${ECR_NAME}/order-domain:${TAG}"
+    ports:
+      - "8083:8080"
+
+  payment:
+    build:
+      context: .
+      dockerfile: service/payment/Dockerfile
+    image: "${ECR_NAME}/payment-domain:${TAG}"
+    ports:
+      - "8084:8080"
+
+  product:
+    build:
+      context: .
+      dockerfile: service/product/Dockerfile
+    image: "${ECR_NAME}/product-domain:${TAG}"
+    ports:
+      - "8085:8080"
