@@ -12,7 +12,6 @@ import com.groom.common.infrastructure.feign.config.FeignConfig;
 
 /**
  * Product 서비스 API 호출용 Feign Client
- *
  * Cart 서비스 입장에서:
  * - 상품 존재 여부
  * - 판매 가능 여부
