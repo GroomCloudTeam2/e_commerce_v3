@@ -23,7 +23,7 @@ pipeline {
                         script: "git log -1 --pretty=%B",
                         returnStdout: true
                     ).trim()
-                    echo "Commit message: ${env.GIT_COMMIT_MSG}"
+                    echo "📝 Commit message: ${env.GIT_COMMIT_MSG}"
                 }
             }
         }
@@ -32,30 +32,56 @@ pipeline {
             steps {
                 script {
                     try {
-                        // merge-base로 정확한 기준점 찾기
-                        def baseCommit = sh(
-                            script: """
-                                if git rev-parse origin/main >/dev/null 2>&1; then
-                                    git merge-base origin/main HEAD
-                                else
-                                    echo "INITIAL_BUILD"
-                                fi
-                            """,
+                        // 현재 브랜치 확인
+                        def currentBranch = sh(
+                            script: 'git rev-parse --abbrev-ref HEAD',
                             returnStdout: true
                         ).trim()
 
-                        // 초기 빌드 처리
-                        if (baseCommit == "INITIAL_BUILD") {
-                            echo "🚀 초기 빌드 - 전체 모듈 빌드"
-                            env.CHANGED_MODULES = 'user,cart,order,payment,product'
-                            return
+                        echo "🌿 Current branch: ${currentBranch}"
+
+                        def diffCommand = ''
+
+                        // ============================================
+                        // 핵심 수정: 브랜치별 다른 비교 전략
+                        // ============================================
+                        if (currentBranch == 'main' || currentBranch == 'master') {
+                            // main 브랜치: 이전 커밋과 비교
+                            echo "📍 Main 브랜치 감지 - 이전 커밋과 비교"
+                            diffCommand = "git diff --name-only HEAD~1..HEAD"
+
+                        } else {
+                            // feature 브랜치: main과의 분기점 비교
+                            echo "📍 Feature 브랜치 감지 - main과의 분기점 비교"
+
+                            def baseCommit = sh(
+                                script: """
+                                    if git rev-parse origin/main >/dev/null 2>&1; then
+                                        git merge-base origin/main HEAD
+                                    else
+                                        echo "INITIAL_BUILD"
+                                    fi
+                                """,
+                                returnStdout: true
+                            ).trim()
+
+                            // 초기 빌드 처리
+                            if (baseCommit == "INITIAL_BUILD") {
+                                echo "🚀 초기 빌드 - 전체 모듈 빌드"
+                                env.CHANGED_MODULES = 'user,cart,order,payment,product'
+                                return
+                            }
+
+                            echo "📍 Base commit (merge-base): ${baseCommit}"
+                            diffCommand = "git diff --name-only ${baseCommit}..HEAD"
                         }
 
-                        echo "📍 Base commit: ${baseCommit}"
+                        echo "📍 Current HEAD: ${sh(script: 'git rev-parse HEAD', returnStdout: true).trim()}"
+                        echo "🔍 Diff command: ${diffCommand}"
 
                         // 변경된 파일 목록 가져오기
                         def diffFiles = sh(
-                            script: "git diff --name-only ${baseCommit}..HEAD",
+                            script: diffCommand,
                             returnStdout: true
                         ).trim()
 
@@ -65,20 +91,30 @@ pipeline {
                             return
                         }
 
-                        echo "📝 Changed files:\n${diffFiles}"
+                        echo "📝 Changed files:"
+                        diffFiles.split('\n').each { file ->
+                            echo "   - ${file}"
+                        }
 
                         // 변경된 모듈 추출
                         def modules = [] as Set
                         diffFiles.split('\n').each { file ->
+                            file = file.trim()
+                            if (!file) return
+
+                            // service/ 하위 파일 체크
                             if (file.startsWith('service/')) {
                                 def parts = file.split('/')
                                 if (parts.size() >= 2 && parts[1]) {
-                                    modules << parts[1]
+                                    def moduleName = parts[1]
+                                    echo "   ✓ Module detected: ${moduleName}"
+                                    modules << moduleName
                                 }
                             }
+
                             // 루트 빌드 파일 변경 시
-                            if (file in ['build.gradle', 'settings.gradle', 'gradle.properties']) {
-                                echo "⚠️ 루트 빌드 파일 변경 감지 → 전체 빌드"
+                            if (file in ['build.gradle', 'settings.gradle', 'gradle.properties', 'gradlew', 'gradlew.bat']) {
+                                echo "   ⚠️ Root build file changed: ${file}"
                                 modules = ['user', 'cart', 'order', 'payment', 'product'] as Set
                             }
                         }
@@ -90,7 +126,15 @@ pipeline {
                         }
 
                         env.CHANGED_MODULES = modules.join(',')
-                        echo "🧩 Final build modules: ${env.CHANGED_MODULES}"
+                        echo """
+                        ═══════════════════════════════════════
+                        🎯 Build Plan
+                        ═══════════════════════════════════════
+                        Branch: ${currentBranch}
+                        Modules: ${env.CHANGED_MODULES}
+                        Count: ${modules.size()}
+                        ═══════════════════════════════════════
+                        """
 
                     } catch (Exception e) {
                         echo "❌ 변경 감지 실패: ${e.message}"
@@ -151,7 +195,6 @@ pipeline {
                 script {
                     env.CHANGED_MODULES.split(',').each { module ->
                         echo "📊 Running code quality checks for: ${module}"
-                        // 필요시 checkstyle, spotbugs 등 추가
                         sh "./gradlew :service:${module}:check || true"
                     }
                 }
@@ -174,9 +217,6 @@ pipeline {
                 archiveArtifacts artifacts: 'service/**/build/libs/*.jar',
                                 allowEmptyArchive: true,
                                 fingerprint: true
-
-                // Gradle 캐시 정리 (선택적)
-                // sh './gradlew clean --quiet || true'
             }
         }
 
