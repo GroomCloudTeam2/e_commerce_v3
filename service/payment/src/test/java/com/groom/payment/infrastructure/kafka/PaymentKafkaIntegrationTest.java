@@ -25,6 +25,11 @@ import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groom.common.event.Type.EventType;
@@ -38,7 +43,19 @@ import com.groom.payment.infrastructure.executor.TossPaymentExecutor;
 @SpringBootTest
 @EmbeddedKafka(partitions = 1, topics = { "${event.kafka.topic:domain-events}" })
 @ActiveProfiles("test")
+@Testcontainers
 class PaymentKafkaIntegrationTest {
+
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine");
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        System.out.println("JDBC URL: " + postgres.getJdbcUrl());
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+    }
 
     @Autowired
     private EmbeddedKafkaBroker embeddedKafkaBroker;
@@ -51,6 +68,9 @@ class PaymentKafkaIntegrationTest {
 
     @MockBean
     private TossPaymentExecutor tossPaymentExecutor;
+
+    @MockBean
+    private KafkaTemplate<String, Object> kafkaTemplate;
 
     @Value("${event.kafka.topic:domain-events}")
     private String topic;
@@ -73,9 +93,9 @@ class PaymentKafkaIntegrationTest {
         UUID orderId = UUID.randomUUID();
         OrderCreatedPayload payload = OrderCreatedPayload.builder()
                 .orderId(orderId)
-                .userId(1L)
+                .userId(UUID.randomUUID())
                 .totalAmount(1000L)
-                .products(java.util.List.of())
+
                 .build();
 
         EventEnvelope event = EventEnvelope.builder()

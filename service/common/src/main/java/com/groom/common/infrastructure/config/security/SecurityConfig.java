@@ -37,7 +37,7 @@ public class SecurityConfig {
 				.csrf(AbstractHttpConfigurer::disable)
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/test/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+						.requestMatchers("/test/**", "/swagger-ui/**", "/v3/api-docs/**","/api/orders/**").permitAll()
 						// http
 						// .csrf(csrf -> csrf.disable()) // 테스트를 위해 CSRF 비활성화
 						// .authorizeHttpRequests(auth -> auth

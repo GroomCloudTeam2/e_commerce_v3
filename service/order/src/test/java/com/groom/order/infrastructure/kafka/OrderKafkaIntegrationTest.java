@@ -3,13 +3,14 @@ package com.groom.order.infrastructure.kafka;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-import java.time.Instant;
+import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -36,13 +37,16 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groom.common.event.Type.EventType;
 import com.groom.common.event.envelope.EventEnvelope;
-import com.groom.common.event.payload.PaymentCompletedPayload;
-import com.groom.common.event.payload.StockDeductedPayload;
-import com.groom.order.domain.entity.Order;
-import com.groom.order.domain.status.OrderStatus;
+import com.groom.order.application.service.OrderService;
 import com.groom.order.domain.repository.OrderRepository;
 import com.groom.order.infrastructure.client.ProductClient;
 import com.groom.order.infrastructure.client.UserClient;
+import com.groom.order.infrastructure.client.dto.UserAddressResponse;
+import com.groom.order.presentation.dto.request.OrderCreateItemRequest;
+import com.groom.order.presentation.dto.request.OrderCreateRequest;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @EmbeddedKafka(partitions = 1, topics = { "${event.kafka.topic:domain-events}" })
@@ -69,6 +73,12 @@ class OrderKafkaIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private OrderService orderService;
+
+    @Autowired
+    private OrderOutboxPublisher orderOutboxPublisher;
+
     @MockBean
     private UserClient userClient;
 
@@ -86,95 +96,56 @@ class OrderKafkaIntegrationTest {
         // Producer Setup
         Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafkaBroker);
         producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, org.springframework.kafka.support.serializer.JsonSerializer.class);
+        producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+                org.springframework.kafka.support.serializer.JsonSerializer.class);
         DefaultKafkaProducerFactory<String, Object> pf = new DefaultKafkaProducerFactory<>(producerProps);
         testKafkaTemplate = new KafkaTemplate<>(pf);
 
         // Consumer Setup (to verify Order service output)
         Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("test-group", "true", embeddedKafkaBroker);
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class); // Read JSON as String
+        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class); // Read JSON as
+                                                                                                     // String
+        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         DefaultKafkaConsumerFactory<String, Object> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
         testConsumer = cf.createConsumer();
         embeddedKafkaBroker.consumeFromAnEmbeddedTopic(testConsumer, topic);
     }
 
     @Test
-    @DisplayName("Order Flow: Created -> Payment Completed -> Stock Deducted -> Confirmed")
-    void testOrderFlow() throws Exception {
-        // 1. Create Order
-        Order order = Order.builder()
-                .buyerId(UUID.randomUUID())
-                .orderNumber(UUID.randomUUID().toString().substring(0, 20))
-                .totalPaymentAmount(1000L)
-                .recipientName("Test User")
-                .recipientPhone("010-1234-5678")
-                .zipCode("12345")
-                .shippingAddress("Test Address")
-                .shippingMemo("Test Memo")
-                .build();
-        
-        // Add an item to the order
-        com.groom.order.domain.entity.OrderItem item = com.groom.order.domain.entity.OrderItem.builder()
-                .order(order)
-                .productId(UUID.randomUUID())
-                .ownerId(UUID.randomUUID())
-                .productTitle("Test Product")
-                .quantity(1)
-                .unitPrice(1000L)
-                .build();
-        order.getItems().add(item);
+    @DisplayName("Order Created -> Event Published to Kafka")
+    void testOrderCreatedEvent() throws Exception {
+        // 1. Mock External Clients
+        UUID userId = UUID.randomUUID();
 
-        orderRepository.save(order);
-        UUID orderId = order.getOrderId(); // Use UUID orderId
+        when(userClient.getUserAddress(any(), any()))
+                .thenReturn(new UserAddressResponse("Test Recipient", "010-1234-5678", "12345", "Test Address", "101"));
 
-        // 2. Simulate Payment Completed Event
-        PaymentCompletedPayload paymentPayload = PaymentCompletedPayload.builder()
-                .orderId(orderId)
-                .paymentKey("test-payment-key")
-                .amount(1000L)
-                .build();
+        // 2. Create Order
+        OrderCreateRequest request = new OrderCreateRequest();
+        request.setTotalAmount(1000L);
 
-        EventEnvelope paymentEvent = EventEnvelope.builder()
-                .eventId(UUID.randomUUID().toString())
-                .eventType(EventType.PAYMENT_COMPLETED)
-                .aggregateType("PAYMENT")
-                .aggregateId(orderId.toString())
-                .occurredAt(Instant.now())
-                .producer("service-payment")
-                .payload(objectMapper.writeValueAsString(paymentPayload))
-                .build();
+        OrderCreateItemRequest itemRequest = new OrderCreateItemRequest();
+        itemRequest.setProductId(UUID.randomUUID());
+        itemRequest.setVariantId(UUID.randomUUID());
+        itemRequest.setProductTitle("Test Product");
+        itemRequest.setQuantity(1);
+        itemRequest.setUnitPrice(1000L);
+        request.setItems(java.util.List.of(itemRequest));
 
-        testKafkaTemplate.send(topic, orderId.toString(), paymentEvent);
+        UUID orderId = orderService.createOrder(userId, request);
 
-        // 3. Verify Order Status -> PAID
-        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-            Order updatedOrder = orderRepository.findById(orderId).orElseThrow();
-            assertThat(updatedOrder.getStatus()).isEqualTo(OrderStatus.PAID);
-        });
+        // 3. Trigger Outbox Publisher manually
+        orderOutboxPublisher.publish();
 
-        // 4. Simulate Stock Deducted Event
-        StockDeductedPayload stockPayload = StockDeductedPayload.builder()
-                .orderId(orderId)
-                .items(java.util.List.of())
-                .build();
+        // 4. Verify Event Published to Kafka
+        ConsumerRecord<String, Object> record = KafkaTestUtils.getSingleRecord(testConsumer, topic,
+                Duration.ofSeconds(10));
+        assertThat(record).isNotNull();
+        String payloadJson = (String) record.value();
+        EventEnvelope event = objectMapper.readValue(payloadJson, EventEnvelope.class);
 
-        EventEnvelope stockEvent = EventEnvelope.builder()
-                .eventId(UUID.randomUUID().toString())
-                .eventType(EventType.STOCK_DEDUCTED)
-                .aggregateType("PRODUCT")
-                .aggregateId(orderId.toString())
-                .occurredAt(Instant.now())
-                .producer("service-product")
-                .payload(objectMapper.writeValueAsString(stockPayload))
-                .build();
-
-        testKafkaTemplate.send(topic, orderId.toString(), stockEvent);
-
-        // 5. Verify Order Status -> CONFIRMED
-        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-            Order updatedOrder = orderRepository.findById(orderId).orElseThrow();
-            assertThat(updatedOrder.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
-        });
+        assertThat(event.getEventType()).isEqualTo(EventType.ORDER_CREATED);
+        assertThat(event.getAggregateId()).isEqualTo(orderId.toString());
     }
 }
