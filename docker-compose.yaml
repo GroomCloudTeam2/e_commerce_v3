@@ -1,42 +1,131 @@
-version: "3.8"
+# version: "3.8"
+
+# services:
+#   user:
+#     build:
+#       context: .
+#       dockerfile: service/user/Dockerfile
+#     image: "${ECR_NAME}/user-domain:${TAG}"
+#     ports:
+#       - "8081:8080"
+
+#   cart:
+#     build:
+#       context: .
+#       dockerfile: service/cart/Dockerfile
+#     image: "${ECR_NAME}/cart-domain:${TAG}"
+#     ports:
+#       - "8082:8080"
+
+#   order:
+#     build:
+#       context: .
+#       dockerfile: service/order/Dockerfile
+#     image: "${ECR_NAME}/order-domain:${TAG}"
+#     ports:
+#       - "8083:8080"
+
+#   payment:
+#     build:
+#       context: .
+#       dockerfile: service/payment/Dockerfile
+#     image: "${ECR_NAME}/payment-domain:${TAG}"
+#     ports:
+#       - "8084:8080"
+
+#   product:
+#     build:
+#       context: .
+#       dockerfile: service/product/Dockerfile
+#     image: "${ECR_NAME}/product-domain:${TAG}"
+#     ports:
+#       - "8085:8080"
+
+#   kafka:
+#     image: apache/kafka:4.1.1 # 2026년 기준 최신 버전 사용
+#     container_name: kafka
+#     ports:
+#       - "9093:9093" # 내 맥북(IntelliJ/Local)에서 접속할 포트
+#     environment:
+#       KAFKA_CLUSTER_ID: 9ZCIjzlhTweLM-tgcDTr0A
+#       KAFKA_NODE_ID: 1
+#       KAFKA_PROCESS_ROLES: broker,controller
+#       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+#       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9091
+
+#       # 1. 리스너 별 보안 프로토콜 매핑
+#       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      
+#       # 2. 카프카가 실제로 리스닝할 포트 (도커 내부 기준)
+#       KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9091
+      
+#       # 3. 클라이언트(앱)에게 "이쪽으로 접속해"라고 알려줄 주소
+#       # - 도커 내부끼리는 kafka:9092
+#       # - 내 맥북 로컬 앱은 localhost:9093
+#       KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9093
+      
+#       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+#       # 개발용 단일 브로커 최적화 (유실 방지보다 가용성 우선)
+#       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+#       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+#       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+#       KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+#       KAFKA_MIN_INSYNC_REPLICAS: 1
+#       KAFKA_LOG_DIRS: /var/lib/kafka/data
+
+#     volumes:
+#       - kafka-data:/var/lib/kafka/data
+
+# volumes:
+#   kafka-data:
+#     driver: local
+
 
 services:
-  user:
-    build:
-      context: .
-      dockerfile: service/user/Dockerfile
-    image: "${ECR_NAME}/user-domain:${TAG}"
+  # 1. PostgreSQL 설정
+  local-db:
+    image: postgres:15-alpine
+    container_name: local-db
     ports:
-      - "8081:8080"
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ecommerce
 
-  cart:
-    build:
-      context: .
-      dockerfile: service/cart/Dockerfile
-    image: "${ECR_NAME}/cart-domain:${TAG}"
+  # 2. Redis 설정
+  local-redis:
+    image: redis:alpine
+    container_name: local-redis
     ports:
-      - "8082:8080"
+      - "6379:6379"
 
-  order:
-    build:
-      context: .
-      dockerfile: service/order/Dockerfile
-    image: "${ECR_NAME}/order-domain:${TAG}"
+  # 3. Kafka 설정 (KRaft 모드)
+  kafka:
+    image: apache/kafka:4.1.1
+    container_name: kafka
     ports:
-      - "8083:8080"
+      - "9093:9093"
+    environment:
+      KAFKA_CLUSTER_ID: 9ZCIjzlhTweLM-tgcDTr0A
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9091
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9091
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_MIN_INSYNC_REPLICAS: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - kafka-data:/var/lib/kafka/data
 
-  payment:
-    build:
-      context: .
-      dockerfile: service/payment/Dockerfile
-    image: "${ECR_NAME}/payment-domain:${TAG}"
-    ports:
-      - "8084:8080"
-
-  product:
-    build:
-      context: .
-      dockerfile: service/product/Dockerfile
-    image: "${ECR_NAME}/product-domain:${TAG}"
-    ports:
-      - "8085:8080"
+# 볼륨 정의 (영속성 보장)
+volumes:
+  kafka-data:
+    driver: local

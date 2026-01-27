@@ -1,4 +1,4 @@
-package com.groom.common.event;
+package com.groom.product.application.event.payload;
 
 import java.util.List;
 import java.util.UUID;
@@ -8,10 +8,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/**
- * Product → Order: 재고 차감 실패 이벤트
- * Order는 이 이벤트를 수신하여 적절한 에러 처리를 수행합니다.
- */
 @Getter
 @Builder
 @NoArgsConstructor
