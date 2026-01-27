@@ -27,6 +27,10 @@ services:
     image: "${ECR_NAME:-local}/order-domain:${TAG:-latest}"
     ports:
       - "8083:8080"
+    depends_on:
+      - local-db
+      - local-redis
+      - kafka
 
   payment:
     build:
