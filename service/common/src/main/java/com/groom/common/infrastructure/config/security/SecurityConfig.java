@@ -27,43 +27,50 @@ public class SecurityConfig {
 	@Bean
 	public WebSecurityCustomizer webSecurityCustomizer() {
 		return (web) -> web.ignoring()
-			.requestMatchers(PathRequest.toStaticResources().atCommonLocations())
-			.requestMatchers("/pay.html", "/pay-success.html", "/pay-fail.html");
+				.requestMatchers(PathRequest.toStaticResources().atCommonLocations())
+				.requestMatchers("/pay.html", "/pay-success.html", "/pay-fail.html");
 	}
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
-			.csrf(AbstractHttpConfigurer::disable)
-			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-			.authorizeHttpRequests(auth -> auth
-				// 인증/회원가입
-				.requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login").permitAll()
+				.csrf(AbstractHttpConfigurer::disable)
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.authorizeHttpRequests(auth -> auth
+						.requestMatchers("/test/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+						// http
+						// .csrf(csrf -> csrf.disable()) // 테스트를 위해 CSRF 비활성화
+						// .authorizeHttpRequests(auth -> auth
+						// .requestMatchers("/test/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+						// // ✅ 테스트 경로 허용!
+						// .anyRequest().authenticated())
+						// .authorizeHttpRequests(auth -> auth
+						// 인증/회원가입
+						.requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login").permitAll()
 
-				// 결제 관련 엔드포인트 (ready/success/fail/confirm 등 포함)
-				.requestMatchers("/api/v1/payments/**").permitAll()
+						// 결제 관련 엔드포인트 (ready/success/fail/confirm 등 포함)
+						.requestMatchers("/api/v1/payments/**").permitAll()
 
-				// 상품 공개 API (구매자용)
-				.requestMatchers("/api/v1/products", "/api/v1/products/{productId}").permitAll()
+						// 상품 공개 API (구매자용)
+						.requestMatchers("/api/v1/products", "/api/v1/products/{productId}").permitAll()
 
-				// 내부 API (서비스 간 통신용)
-				.requestMatchers("/api/v1/internal/**").permitAll()
-				.requestMatchers("/internal/**").permitAll()
+						// 내부 API (서비스 간 통신용)
+						.requestMatchers("/api/v1/internal/**").permitAll()
+						.requestMatchers("/internal/**").permitAll()
 
-				// 카테고리 공개 API
-				.requestMatchers("/api/v1/categories", "/api/v1/categories/{categoryId}").permitAll()
+						// 카테고리 공개 API
+						.requestMatchers("/api/v1/categories", "/api/v1/categories/{categoryId}").permitAll()
 
-				// Swagger
-				.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+						// Swagger
+						.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
-				// 루트/파비콘
-				.requestMatchers("/", "/favicon.ico", "/error").permitAll()
+						// 루트/파비콘
+						.requestMatchers("/", "/favicon.ico", "/error").permitAll()
 
-				.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-				.anyRequest().authenticated()
-			)
-			// 사용자 요청 Role 필터 검사
-			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+						.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+						.anyRequest().authenticated())
+				// 사용자 요청 Role 필터 검사
+				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}
