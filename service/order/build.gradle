@@ -17,4 +17,13 @@ dependencies {
     
     // Kafka
     implementation 'org.springframework.kafka:spring-kafka'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
+}
+
+test {
+    testLogging {
+        exceptionFormat = 'full'
+        showStackTraces = true
+        showStandardStreams = true
+    }
 }
