@@ -5,7 +5,8 @@ spring:
   application:
     name: service-order
   datasource:
-    url: jdbc:postgresql://localhost:5432/order_db
+    #url: jdbc:postgresql://localhost:5432/order_db
+    url: jdbc:postgresql://local-db:5432/ecommerce
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -19,11 +20,12 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   data:
     redis:
-      host: localhost
+      #host: localhost
+      host: local-redis
       port: 6379
       
   kafka:
-    bootstrap-servers: localhost:9093
+    bootstrap-servers: localhost:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
