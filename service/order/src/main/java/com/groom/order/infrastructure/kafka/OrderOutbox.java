@@ -16,6 +16,9 @@ import lombok.NoArgsConstructor;
 import com.groom.common.event.envelope.EventEnvelope;
 import com.groom.common.outbox.OutboxStatus;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 @Entity
 @Getter
 @NoArgsConstructor
@@ -31,6 +34,7 @@ public class OrderOutbox {
     private String aggregateType;
     private UUID aggregateId;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private String payload;
 

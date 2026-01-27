@@ -3,11 +3,11 @@ package com.groom.payment.event.listener;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import com.groom.common.event.OrderCancelledEvent;
-import com.groom.common.event.OrderCreatedEvent;
+import com.groom.common.event.payload.OrderCancelledPayload;
+import com.groom.common.event.payload.OrderCreatedPayload;
+import com.groom.common.event.payload.StockDeductionFailedPayload;
 import com.groom.payment.application.service.PaymentCommandService;
 import com.groom.payment.presentation.dto.request.ReqCancelPayment;
-import com.groom.common.event.StockDeductionFailedEvent;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,12 +24,12 @@ public class PaymentEventListener {
 	 * Order → Payment
 	 */
 	@EventListener
-	public void handleOrderCreated(OrderCreatedEvent event) {
+	public void handleOrderCreated(OrderCreatedPayload event) {
 		log.info("[Payment] OrderCreatedEvent 수신 - orderId: {}, amount: {}",
-			event.orderId(), event.amount());
+				event.getOrderId(), event.getTotalAmount());
 
 		// 결제 READY 생성 (멱등)
-		paymentCommandService.createReady(event.orderId(), event.amount());
+		paymentCommandService.createReady(event.getOrderId(), event.getTotalAmount());
 	}
 
 	/**
@@ -37,14 +37,13 @@ public class PaymentEventListener {
 	 * Order → Payment
 	 */
 	@EventListener
-	public void handleOrderCancelled(OrderCancelledEvent event) {
+	public void handleOrderCancelled(OrderCancelledPayload event) {
 		log.info("[Payment] OrderCancelledEvent 수신 - orderId: {}, reason: {}",
-			event.orderId(), event.reason());
+				event.getOrderId(), event.getReason());
 
 		// 결제 취소 / 환불 트리거
 		paymentCommandService.cancel(
-			new ReqCancelPayment(event.orderId(), event.reason())
-		);
+				new ReqCancelPayment(event.getOrderId(), event.getReason()));
 	}
 
 	/**
@@ -52,16 +51,14 @@ public class PaymentEventListener {
 	 * Product → Payment (보상 트랜잭션)
 	 */
 	@EventListener
-	public void handleStockDeductionFailed(StockDeductionFailedEvent event) {
+	public void handleStockDeductionFailed(StockDeductionFailedPayload event) {
 		log.warn("[Payment] StockDeductionFailedEvent 수신 - orderId: {}, reason: {}",
-			event.getOrderId(), event.getFailReason());
+				event.getOrderId(), event.getFailReason());
 
 		// 결제 취소(보상)
 		paymentCommandService.cancel(
-			new ReqCancelPayment(
-				event.getOrderId(),
-				event.getFailReason()
-			)
-		);
+				new ReqCancelPayment(
+						event.getOrderId(),
+						event.getFailReason()));
 	}
 }
