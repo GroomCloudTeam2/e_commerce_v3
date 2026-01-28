@@ -23,8 +23,8 @@ public class ProductEventConsumer {
     private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "${event.kafka.topic:domain-events}", groupId = "${spring.kafka.consumer.group-id:product-service-group}")
-    public void handleEvent(EventEnvelope event) {
+    @KafkaListener(topics = "${event.kafka.topics.order:order-events}", groupId = "${spring.kafka.consumer.group-id}")
+    public void handleEvent(EventEnvelope event, org.springframework.kafka.support.Acknowledgment ack) {
         log.debug("[ProductEventConsumer] Received event: type={}, id={}", event.getEventType(), event.getEventId());
 
         try {
@@ -45,6 +45,7 @@ public class ProductEventConsumer {
                 log.info("[ProductEventConsumer] Published OrderCancelledPayload locally. orderId={}",
                         payload.getOrderId());
             }
+            ack.acknowledge();
         } catch (JsonProcessingException e) {
             log.error("[ProductEventConsumer] Failed to deserialize payload for event type: {}", event.getEventType(),
                     e);

@@ -29,7 +29,7 @@ public class PaymentEventPublisher {
 	private final KafkaTemplate<String, EventEnvelope> kafkaTemplate;
 	private final ObjectMapper objectMapper;
 
-	@Value("${event.kafka.topic:domain-events}")
+	@Value("${event.kafka.topics.order:order-events}")
 	private String topic;
 
 	public void publishPaymentCompleted(UUID orderId, String paymentKey, Long amount) {

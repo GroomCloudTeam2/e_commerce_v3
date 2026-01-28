@@ -27,7 +27,7 @@ public class UserEventProducer {
     private final KafkaTemplate<String, EventEnvelope> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
-    @Value("${event.kafka.topic:domain-events}")
+    @Value("${event.kafka.topics.user:user-lifecycle}")
     private String topic;
 
     public void publishUserWithdrawn(Long userId) {

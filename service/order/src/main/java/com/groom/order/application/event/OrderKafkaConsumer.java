@@ -36,10 +36,11 @@ public class OrderKafkaConsumer {
 	@Value("${spring.application.name}")
 	private String producer;
 
-	@KafkaListener(topics = "${event.kafka.topic:domain-events}", groupId = "${spring.application.name}")
+	@KafkaListener(topics = "${event.kafka.topics.order:order-events}", groupId = "${spring.kafka.consumer.group-id}")
 	@Transactional
-	public void handle(EventEnvelope envelope) {
+	public void handle(EventEnvelope envelope, org.springframework.kafka.support.Acknowledgment ack) {
 		if (producer.equals(envelope.getProducer())) {
+			ack.acknowledge();
 			return; // skip self-produced events
 		}
 
@@ -54,6 +55,7 @@ public class OrderKafkaConsumer {
 			default -> {
 			}
 		}
+		ack.acknowledge();
 	}
 
 	private void handlePaymentCompleted(EventEnvelope envelope) {
@@ -74,16 +76,15 @@ public class OrderKafkaConsumer {
 		orderRepository.save(order);
 
 		outboxService.save(
-			EventType.ORDER_CONFIRMED,
-			"ORDER",
-			payload.getOrderId(),
-			payload.getOrderId().toString(),
-			OrderConfirmedPayload.builder()
-				.orderId(payload.getOrderId())
-				.userId(order.getBuyerId())
-				.confirmedAt(Instant.now())
-				.build()
-		);
+				EventType.ORDER_CONFIRMED,
+				"ORDER",
+				payload.getOrderId(),
+				payload.getOrderId().toString(),
+				OrderConfirmedPayload.builder()
+						.orderId(payload.getOrderId())
+						.userId(order.getBuyerId())
+						.confirmedAt(Instant.now())
+						.build());
 	}
 
 	private void handlePaymentFailed(EventEnvelope envelope) {

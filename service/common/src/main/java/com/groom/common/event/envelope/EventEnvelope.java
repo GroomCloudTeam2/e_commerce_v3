@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@lombok.ToString
 public class EventEnvelope {
 
     private String eventId; // uuid

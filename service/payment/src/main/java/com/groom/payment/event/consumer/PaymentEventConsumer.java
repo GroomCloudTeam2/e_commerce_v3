@@ -23,9 +23,9 @@ public class PaymentEventConsumer {
     private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "${event.kafka.topic:domain-events}", groupId = "${spring.kafka.consumer.group-id:payment-service-group}")
-    public void handleEvent(EventEnvelope event) {
-        log.debug("[PaymentEventConsumer] Received event: type={}, id={}", event.getEventType(), event.getEventId());
+    @KafkaListener(topics = "${event.kafka.topics.order:order-events}", groupId = "${spring.kafka.consumer.group-id}")
+    public void handleEvent(EventEnvelope event, org.springframework.kafka.support.Acknowledgment ack) {
+        log.debug("[ProductEventConsumer] Received event: type={}, id={}", event.getEventType(), event.getEventId());
 
         try {
             if (event.getEventType() == EventType.ORDER_CREATED) {
@@ -44,7 +44,10 @@ public class PaymentEventConsumer {
                 eventPublisher.publishEvent(payload);
                 log.info("[PaymentEventConsumer] Published StockDeductionFailedPayload locally. orderId={}",
                         payload.getOrderId());
+            } else {
+                log.info("[PaymentEventConsumer] Ignored event type: {}", event.getEventType());
             }
+            ack.acknowledge();
         } catch (JsonProcessingException e) {
             log.error("[PaymentEventConsumer] Failed to deserialize payload for event type: {}", event.getEventType(),
                     e);

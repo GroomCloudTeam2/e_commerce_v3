@@ -12,7 +12,11 @@ services:
     depends_on:
       - local-db
       - local-redis
-      - kafka
+      - kafka1
+      - kafka2
+      - kafka3
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
 
   cart:
     build:
@@ -25,7 +29,11 @@ services:
     depends_on:
       - local-db
       - local-redis
-      - kafka
+      - kafka1
+      - kafka2
+      - kafka3
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
 
   order:
     build:
@@ -38,9 +46,11 @@ services:
     depends_on:
       - local-db
       - local-redis
-      - kafka
+      - kafka1
+      - kafka2
+      - kafka3
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
 
   payment:
     build:
@@ -53,9 +63,11 @@ services:
     depends_on:
       - local-db
       - local-redis
-      - kafka
+      - kafka1
+      - kafka2
+      - kafka3
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
 
   product:
     build:
@@ -68,9 +80,11 @@ services:
     depends_on:
       - local-db
       - local-redis
-      - kafka
+      - kafka1
+      - kafka2
+      - kafka3
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
 
 # services:
    # 1. PostgreSQL 설정
@@ -92,44 +106,88 @@ services:
      - "6379:6379"
 
   # 3. Kafka 설정 (KRaft 모드)
-  kafka:
+  kafka1:
     image: apache/kafka:4.1.1
-    container_name: kafka
+    container_name: kafka1
     ports:
-      - "9093:9093"
+      - "9093:9093" 
     environment:
       KAFKA_CLUSTER_ID: 9ZCIjzlhTweLM-tgcDTr0A
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9091
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9091,2@kafka2:9091,3@kafka3:9091
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9091,EXTERNAL://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka1:9092,EXTERNAL://localhost:9093
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9091
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9093
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
-      KAFKA_MIN_INSYNC_REPLICAS: 1
-      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
     volumes:
-      - kafka-data:/var/lib/kafka/data
-    
+      - kafka1-data:/var/lib/kafka/data
+
+  kafka2:
+    image: apache/kafka:4.1.1
+    container_name: kafka2
+    ports:
+      - "9096:9096" # 포트 변경 (9094 conflict)
+    environment:
+      KAFKA_CLUSTER_ID: 9ZCIjzlhTweLM-tgcDTr0A
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9091,2@kafka2:9091,3@kafka3:9091
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9091,EXTERNAL://0.0.0.0:9096 # 포트 변경
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka2:9092,EXTERNAL://localhost:9096 # 포트 변경
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+    volumes:
+      - kafka2-data:/var/lib/kafka/data
+
+  kafka3:
+    image: apache/kafka:4.1.1
+    container_name: kafka3
+    ports:
+      - "9095:9095" # 포트 변경
+    environment:
+      KAFKA_CLUSTER_ID: 9ZCIjzlhTweLM-tgcDTr0A
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9091,2@kafka2:9091,3@kafka3:9091
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9091,EXTERNAL://0.0.0.0:9095 # 포트 변경
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka3:9092,EXTERNAL://localhost:9095 # 포트 변경
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+    volumes:
+      - kafka3-data:/var/lib/kafka/data
+
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
-    platform: linux/amd64
     ports:
       - "8090:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: ecommerce-cluster
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-      #KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: 
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka1:9092,kafka2:9092,kafka3:9092
       DYNAMIC_CONFIG_ENABLED: true
     depends_on:
-      - kafka
+      - kafka1
+      - kafka2
+      - kafka3
 
-# 볼륨 정의 (영속성 보장)
+# 볼륨 정의 수정
 volumes:
-  kafka-data:
-    driver: local
+  kafka1-data:
+  kafka2-data:
+  kafka3-data:

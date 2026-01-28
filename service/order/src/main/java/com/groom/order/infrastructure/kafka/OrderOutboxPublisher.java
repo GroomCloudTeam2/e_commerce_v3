@@ -24,7 +24,7 @@ public class OrderOutboxPublisher {
 	private final OrderOutboxRepository outboxRepository;
 	private final KafkaTemplate<String, EventEnvelope> kafkaTemplate;
 
-	@Value("${event.kafka.topic:domain-events}")
+	@Value("${event.kafka.topics.order:order-events}")
 	private String topic;
 
 	@Scheduled(fixedDelayString = "${outbox.publisher.delay-ms:1000}")
@@ -37,16 +37,16 @@ public class OrderOutboxPublisher {
 
 		for (OrderOutbox outbox : batch) {
 			EventEnvelope envelope = EventEnvelope.builder()
-				.eventId(outbox.getEventId().toString())
-				.eventType(EventType.valueOf(outbox.getEventType()))
-				.aggregateType(outbox.getAggregateType())
-				.aggregateId(outbox.getAggregateId().toString())
-				.occurredAt(outbox.getCreatedAt())
-				.producer(outbox.getProducer())
-				.traceId(outbox.getTraceId())
-				.version(outbox.getVersion())
-				.payload(outbox.getPayload())
-				.build();
+					.eventId(outbox.getEventId().toString())
+					.eventType(EventType.valueOf(outbox.getEventType()))
+					.aggregateType(outbox.getAggregateType())
+					.aggregateId(outbox.getAggregateId().toString())
+					.occurredAt(outbox.getCreatedAt())
+					.producer(outbox.getProducer())
+					.traceId(outbox.getTraceId())
+					.version(outbox.getVersion())
+					.payload(outbox.getPayload())
+					.build();
 
 			try {
 				kafkaTemplate.send(topic, outbox.getAggregateId().toString(), envelope).get();
