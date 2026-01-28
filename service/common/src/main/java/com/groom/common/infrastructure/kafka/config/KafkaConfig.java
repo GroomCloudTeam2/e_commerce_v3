@@ -65,8 +65,16 @@ public class KafkaConfig {
         Map<String, Object> config = new HashMap<>();
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
-        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+                org.springframework.kafka.support.serializer.ErrorHandlingDeserializer.class);
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+                org.springframework.kafka.support.serializer.ErrorHandlingDeserializer.class);
+
+        // Configure ErrorHandlingDeserializer delegates
+        config.put(org.springframework.kafka.support.serializer.ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS,
+                StringDeserializer.class);
+        config.put(org.springframework.kafka.support.serializer.ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS,
+                JsonDeserializer.class);
 
         // Offset & Commit
         config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false); // 수동 커밋
@@ -75,8 +83,10 @@ public class KafkaConfig {
         // Tuning
         config.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 50); // 배치 처리 갯수 제한 (타임아웃 방지)
 
-        // Trusted Packages
-        config.put(JsonDeserializer.TRUSTED_PACKAGES, "*"); // 모든 패키지 허용 (보안상 구체적 패키지 권장)
+        // Trusted Packages & Type Mapping
+        config.put(JsonDeserializer.TRUSTED_PACKAGES, "*"); // 모든 패키지 허용
+        config.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false); // 헤더 정보 무시
+        config.put(JsonDeserializer.VALUE_DEFAULT_TYPE, EventEnvelope.class); // 기본 타입 설정
 
         return new DefaultKafkaConsumerFactory<>(config);
     }

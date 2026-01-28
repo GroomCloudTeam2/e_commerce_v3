@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class UserEventProducer {
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final KafkaTemplate<String, EventEnvelope> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
     @Value("${event.kafka.topic:domain-events}")

@@ -5,7 +5,8 @@ spring:
   application:
     name: service-user
   datasource:
-    url: jdbc:postgresql://localhost:5432/user_db
+    #url: jdbc:postgresql://local-db:5432/user_db
+    url: jdbc:postgresql://local-db:5432/ecommerce
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -19,7 +20,8 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   data:
     redis:
-      host: localhost
+      #host: localhost
+      host: local-redis
       port: 6379
 
 jwt:
