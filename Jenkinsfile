@@ -1,4 +1,4 @@
-@Library('jenkins-shared-lib') _
+@Library('jenkins-shared-lib@main') _
 
 pipeline {
     agent any
@@ -114,7 +114,6 @@ pipeline {
             }
         }
     }
-
     post {
       success {
         slackNotify(status: 'SUCCESS', channel: SLACK_CHANNEL, services: CHANGED_SERVICES)
