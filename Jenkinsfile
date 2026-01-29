@@ -77,6 +77,9 @@ pipeline {
                     }
                     steps {
                         script {
+                            // 리포트 디렉토리 생성
+                            sh 'mkdir -p trivy-reports'
+
                             parallel CHANGED_SERVICES.collectEntries { svc ->
                                 [(svc): {
                                     def imageName = "${ECR_REGISTRY}/goorm-${svc}:${IMAGE_TAG}"
@@ -85,7 +88,9 @@ pipeline {
 
                                     // 콘솔 출력용 (테이블)
                                     sh """
-                                        trivy image \
+                                        docker run --rm \
+                                            -v /var/run/docker.sock:/var/run/docker.sock \
+                                            aquasec/trivy:latest image \
                                             --severity HIGH,CRITICAL \
                                             --exit-code 0 \
                                             --no-progress \
@@ -94,12 +99,14 @@ pipeline {
 
                                     // JSON 리포트 저장
                                     sh """
-                                        mkdir -p trivy-reports
-                                        trivy image \
+                                        docker run --rm \
+                                            -v /var/run/docker.sock:/var/run/docker.sock \
+                                            -v ${WORKSPACE}/trivy-reports:/reports \
+                                            aquasec/trivy:latest image \
                                             --severity HIGH,CRITICAL \
                                             --exit-code 0 \
                                             --format json \
-                                            -o trivy-reports/${svc}-report.json \
+                                            -o /reports/${svc}-report.json \
                                             ${imageName}
                                     """
 
