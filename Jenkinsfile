@@ -33,7 +33,7 @@ pipeline {
                     steps {
                         script {
                             CHANGED_SERVICES = getChangedServices()
-                            echo " Changed services: ${CHANGED_SERVICES}"
+                            echo "🔍 Changed services: ${CHANGED_SERVICES}"
                         }
                     }
                 }
@@ -48,7 +48,8 @@ pipeline {
                           ${CHANGED_SERVICES.collect { ":service:${it}:bootJar" }.join(' ')} \
                           --no-daemon \
                           --parallel \
-                          --build-cache
+                          --build-cache \
+                          --configuration-cache
                         """
                     }
                 }
@@ -72,12 +73,12 @@ pipeline {
             }
         }
 
-        /* ================= CD ================ */
+        /* ================= CD ================= */
 
         stage('CD') {
             when {
                 allOf {
-                    branch 'main'
+                    branch 'test2'
                     expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
                 }
             }
@@ -86,28 +87,18 @@ pipeline {
 
                 stage('ECR Login') {
                     steps {
-                        withCredentials([[
-                            $class: 'AmazonWebServicesCredentialsBinding',
-                            credentialsId: 'aws-ecr-credential'
-                        ]]) {
-                            sh '''
-                              aws ecr get-login-password --region $AWS_REGION \
-                              | docker login --username AWS --password-stdin $ECR_REGISTRY
-                            '''
-                        }
+                        sh '''
+                            aws ecr get-login-password --region $AWS_REGION \
+                            | docker login --username AWS --password-stdin $ECR_REGISTRY
+                        '''
                     }
                 }
 
                 stage('Push Images') {
                     steps {
-                        withCredentials([[
-                            $class: 'AmazonWebServicesCredentialsBinding',
-                            credentialsId: 'aws-ecr-credential'
-                        ]]) {
-                            script {
-                                parallel CHANGED_SERVICES.collectEntries { svc ->
-                                    [(svc): { pushImage(svc) }]
-                                }
+                        script {
+                            parallel CHANGED_SERVICES.collectEntries { svc ->
+                                [(svc): { pushImage(svc) }]
                             }
                         }
                     }
@@ -115,14 +106,9 @@ pipeline {
 
                 stage('Deploy ECS (Update Service)') {
                     steps {
-                        withCredentials([[
-                            $class: 'AmazonWebServicesCredentialsBinding',
-                            credentialsId: 'aws-ecr-credential'
-                        ]]) {
-                            script {
-                                parallel CHANGED_SERVICES.collectEntries { svc ->
-                                    [(svc): { deployService(svc) }]
-                                }
+                        script {
+                            parallel CHANGED_SERVICES.collectEntries { svc ->
+                                [(svc): { deployService(serviceName: svc) }]  // ← Map으로 전달
                             }
                         }
                     }
@@ -135,14 +121,15 @@ pipeline {
         success {
             slackSend(
                 channel: SLACK_CHANNEL,
-                message: "✅ 성공\n브랜치: ${BRANCH_NAME}\n서비스: ${CHANGED_SERVICES.join(', ')}"
+                message: "성공\n브랜치: ${BRANCH_NAME ?: 'unknown'}\n서비스: ${CHANGED_SERVICES?.join(', ') ?: '없음'}"
             )
         }
         failure {
             slackSend(
                 channel: SLACK_CHANNEL,
-                message: "❌ 실패\n브랜치: ${BRANCH_NAME}"
+                message: "실패\n브랜치: ${BRANCH_NAME ?: 'unknown'}"
             )
         }
     }
 }
+
