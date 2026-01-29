@@ -1,12 +1,19 @@
 server:
   port: 8082
 
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+  endpoint:
+    health:
+      enabled: true
+
 spring:
   application:
     name: service-cart
   datasource:
-    #url: jdbc:postgresql://localhost:5432/cart_db
-    url: jdbc:postgresql://local-db:5432/ecommerce
+    url: jdbc:postgresql://courm-rds-product-prod.c9iosg68k3c4.ap-northeast-2.rds.amazonaws.com:5432/cart_db
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -20,8 +27,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   data:
     redis:
-      #host: localhost
-      host: local-redis
+      host: localhost
       port: 6379
 
   kafka:
