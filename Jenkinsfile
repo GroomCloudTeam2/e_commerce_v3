@@ -89,7 +89,7 @@ pipeline {
         stage('CD') {
             when {
                 allOf {
-                    branch 'main'
+                    branch 'test4'
                     expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
                 }
             }
