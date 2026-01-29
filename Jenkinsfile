@@ -11,7 +11,7 @@ pipeline {
         ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
         IMAGE_TAG = "${BUILD_NUMBER}-${GIT_COMMIT[0..7]}"
-        SLACK_CHANNEL = "#deploy"
+        SLACK_CHANNEL = "#jenkins-alerts"
 
         ECS_CLUSTER = "courm-cluster-prod"
     }
@@ -28,6 +28,11 @@ pipeline {
 
         stage('CI') {
             stages {
+                stage('🚨 FAIL TEST') {
+                    steps {
+                        error("알람 테스트용 강제 실패")
+                        }
+                    }
 
                 stage('Detect Changes') {
                     steps {
@@ -164,22 +169,15 @@ pipeline {
     }
 
     post {
-        success {
-            slackSend(
-                channel: SLACK_CHANNEL,
-                message: "성공\n브랜치: ${BRANCH_NAME ?: 'unknown'}\n서비스: ${CHANGED_SERVICES?.join(', ') ?: '없음'}"
-            )
-        }
-        failure {
-            slackSend(
-                channel: SLACK_CHANNEL,
-                message: "실패\n브랜치: ${BRANCH_NAME ?: 'unknown'}"
-            )
-        }
-        always {
-            // Trivy 리포트 아카이브 (Jenkins에서 다운로드 가능)
-            archiveArtifacts artifacts: 'trivy-reports/*.json', allowEmptyArchive: true
-        }
+      success {
+        slackNotify(status: 'SUCCESS', channel: SLACK_CHANNEL, services: CHANGED_SERVICES)
+      }
+      failure {
+        slackNotify(status: 'FAILURE', channel: SLACK_CHANNEL, services: CHANGED_SERVICES)
+      }
+      always {
+        archiveArtifacts artifacts: 'trivy-reports/*.json', allowEmptyArchive: true
+      }
     }
 }
 
