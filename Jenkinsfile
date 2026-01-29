@@ -70,6 +70,45 @@ pipeline {
                         }
                     }
                 }
+
+                stage('Image Scan (Trivy)') {
+                    when {
+                        expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                    }
+                    steps {
+                        script {
+                            parallel CHANGED_SERVICES.collectEntries { svc ->
+                                [(svc): {
+                                    def imageName = "${ECR_REGISTRY}/goorm-${svc}:${IMAGE_TAG}"
+
+                                    echo "🔍 Scanning image: ${imageName}"
+
+                                    // 콘솔 출력용 (테이블)
+                                    sh """
+                                        trivy image \
+                                            --severity HIGH,CRITICAL \
+                                            --exit-code 0 \
+                                            --no-progress \
+                                            ${imageName}
+                                    """
+
+                                    // JSON 리포트 저장
+                                    sh """
+                                        mkdir -p trivy-reports
+                                        trivy image \
+                                            --severity HIGH,CRITICAL \
+                                            --exit-code 0 \
+                                            --format json \
+                                            -o trivy-reports/${svc}-report.json \
+                                            ${imageName}
+                                    """
+
+                                    echo "Scan complete for ${svc}"
+                                }]
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -78,7 +117,7 @@ pipeline {
         stage('CD') {
             when {
                 allOf {
-                    branch 'test2'
+                    branch 'main'
                     expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
                 }
             }
@@ -108,7 +147,7 @@ pipeline {
                     steps {
                         script {
                             parallel CHANGED_SERVICES.collectEntries { svc ->
-                                [(svc): { deployService(serviceName: svc) }]  // ← Map으로 전달
+                                [(svc): { deployService(serviceName: svc) }]
                             }
                         }
                     }
@@ -130,6 +169,9 @@ pipeline {
                 message: "실패\n브랜치: ${BRANCH_NAME ?: 'unknown'}"
             )
         }
+        always {
+            // Trivy 리포트 아카이브 (Jenkins에서 다운로드 가능)
+            archiveArtifacts artifacts: 'trivy-reports/*.json', allowEmptyArchive: true
+        }
     }
 }
-
