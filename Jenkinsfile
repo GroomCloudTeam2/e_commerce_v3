@@ -28,6 +28,11 @@ pipeline {
 
         stage('CI') {
             stages {
+                stage('🚨 FAIL TEST') {
+                    steps {
+                        error("알람 테스트용 강제 실패")
+                        }
+                    }
 
                 stage('Detect Changes') {
                     steps {
@@ -150,15 +155,15 @@ pipeline {
                     }
                 }
 
-//                 stage('Deploy ECS (Update Service)') {
-//                     steps {
-//                         script {
-//                             parallel CHANGED_SERVICES.collectEntries { svc ->
-//                                 [(svc): { deployService(serviceName: svc) }]
-//                             }
-//                         }
-//                     }
-//                 }
+                stage('Deploy ECS (Update Service)') {
+                    steps {
+                        script {
+                            parallel CHANGED_SERVICES.collectEntries { svc ->
+                                [(svc): { deployService(serviceName: svc) }]
+                            }
+                        }
+                    }
+                }
             }
         }
     }
