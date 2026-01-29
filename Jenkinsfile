@@ -54,6 +54,19 @@ pipeline {
                     }
                 }
 
+                stage('Unit Test') {
+                    when {
+                        expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                    }
+                    steps {
+                        sh """
+                          ./gradlew \
+                          ${CHANGED_SERVICES.collect { ":service:${it}:test" }.join(' ')} \
+                          --no-daemon
+                        """
+                    }
+                }
+
                 stage('Docker Build (parallel)') {
                     when {
                         expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
