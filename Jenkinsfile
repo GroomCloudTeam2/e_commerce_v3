@@ -167,16 +167,13 @@ pipeline {
             }
         }
     }
-
     post {
-      success {
-        slackNotify(status: 'SUCCESS', channel: SLACK_CHANNEL, services: CHANGED_SERVICES)
-      }
-      failure {
-        slackNotify(status: 'FAILURE', channel: SLACK_CHANNEL, services: CHANGED_SERVICES)
+      always {
+        slackNotify(channel: SLACK_CHANNEL, services: CHANGED_SERVICES)
       }
       always {
         archiveArtifacts artifacts: 'trivy-reports/*.json', allowEmptyArchive: true
       }
     }
+
 }
