@@ -30,26 +30,26 @@ spring:
       host: localhost
       port: 6379
 
-  kafka:
-    bootstrap-servers: 10.0.20.101:9092,10.0.20.35:9092,10.0.21.159:9092
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      acks: all
-      properties:
-        enable.idempotence: true
-        spring.json.add.type.headers: false
-    consumer:
-      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
-      group-id: service-product
-      enable-auto-commit: false
-      properties:
-        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
-        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
-        spring.json.trusted.packages: "*"
-        spring.json.value.default.type: com.groom.common.event.envelope.EventEnvelope
-        spring.json.use.type.headers: false
+#  kafka:
+#    bootstrap-servers: 10.0.20.101:9092,10.0.20.35:9092,10.0.21.159:9092
+#    producer:
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+#      acks: all
+#      properties:
+#        enable.idempotence: true
+#        spring.json.add.type.headers: false
+#    consumer:
+#      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+#      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+#      group-id: service-product
+#      enable-auto-commit: false
+#      properties:
+#        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+#        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+#        spring.json.trusted.packages: "*"
+#        spring.json.value.default.type: com.groom.common.event.envelope.EventEnvelope
+#        spring.json.use.type.headers: false
 
 jwt:
   secret: your-secret-key-should-be-at-least-256-bits-long-for-hs256
