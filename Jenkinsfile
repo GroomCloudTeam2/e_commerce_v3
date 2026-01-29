@@ -150,15 +150,15 @@ pipeline {
                     }
                 }
 
-                stage('Deploy ECS (Update Service)') {
-                    steps {
-                        script {
-                            parallel CHANGED_SERVICES.collectEntries { svc ->
-                                [(svc): { deployService(serviceName: svc) }]
-                            }
-                        }
-                    }
-                }
+//                 stage('Deploy ECS (Update Service)') {
+//                     steps {
+//                         script {
+//                             parallel CHANGED_SERVICES.collectEntries { svc ->
+//                                 [(svc): { deployService(serviceName: svc) }]
+//                             }
+//                         }
+//                     }
+//                 }
             }
         }
     }
