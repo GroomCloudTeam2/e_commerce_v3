@@ -1,109 +1,148 @@
+@Library('jenkins-shared-lib') _
+
 pipeline {
     agent any
 
     environment {
-        // ===== Gradle =====
-        GRADLE_USER_HOME = "${WORKSPACE}/.gradle"
+        GRADLE_USER_HOME = "/var/jenkins_home/.gradle"
 
-        // ===== Docker (나중에 사용을 위해 유지) =====
-        DOCKER_REGISTRY = "boxty123"
+        AWS_REGION     = "ap-northeast-2"
+        AWS_ACCOUNT_ID = "900808296075"
+        ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
         IMAGE_TAG = "${BUILD_NUMBER}-${GIT_COMMIT[0..7]}"
+        SLACK_CHANNEL = "#deploy"
 
-        // ===== SonarCloud (주석 처리) =====
-        // SONAR_PROJECT_KEY = "GroomCloudTeam2_e_commerce_v2"
-        // SONAR_ORG = "groomcloudteam2"
-        // SONAR_HOST_URL = "https://sonarcloud.io"
+        ECS_CLUSTER = "courm-cluster-prod"
     }
 
     options {
+        timeout(time: 30, unit: 'MINUTES')
         timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '20'))
     }
 
     stages {
-        stage('1. Preparation') {
-            steps {
-                sh 'java -version && ./gradlew -version'
-            }
-        }
 
-        stage('2. Checkout') {
-            steps {
-                checkout scm
-            }
-        }
+        /* ================= CI ================= */
 
-        /* =========================
-         * 3️⃣ 전체 모듈 빌드 (.jar 생성)
-         * -x test: 일단 빌드 속도를 위해 테스트를 제외하고 싶다면 추가 (필요시 제거)
-         * bootJar: Spring Boot 실행 가능한 JAR만 생성
-         * ========================= */
-        stage('3. Build All Jars') {
-            steps {
-                echo "--- Starting Multi-Module Build ---"
-                // --parallel 옵션으로 common, user, order 등을 동시에 빌드
-                sh './gradlew clean bootJar --parallel'
-            }
-            post {
-                success {
-                    echo "--- Archiving Artifacts ---"
-                    // 빌드된 모든 서비스의 JAR 파일을 젠킨스 결과물로 저장
-                    archiveArtifacts artifacts: 'service/*/build/libs/*.jar', followSymlinks: false
+        stage('CI') {
+            stages {
+
+                stage('Detect Changes') {
+                    steps {
+                        script {
+                            CHANGED_SERVICES = getChangedServices()
+                            echo " Changed services: ${CHANGED_SERVICES}"
+                        }
+                    }
+                }
+
+                stage('Gradle Build') {
+                    when {
+                        expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                    }
+                    steps {
+                        sh """
+                          ./gradlew \
+                          ${CHANGED_SERVICES.collect { ":service:${it}:bootJar" }.join(' ')} \
+                          --no-daemon \
+                          --parallel \
+                          --build-cache
+                        """
+                    }
+                }
+
+                stage('Docker Build (parallel)') {
+                    when {
+                        expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                    }
+                    steps {
+                        script {
+                            def tasks = [:]
+                            CHANGED_SERVICES.each { svc ->
+                                tasks[svc] = {
+                                    buildDockerImage(svc)
+                                }
+                            }
+                            parallel tasks
+                        }
+                    }
                 }
             }
         }
 
-        /* =========================
-         * 4️⃣ SonarCloud & Quality Gate (주석 처리)
-         * =========================
-        stage('4. Static Analysis') {
-            environment {
-                SONAR_TOKEN = credentials('sonarcloud-token')
-            }
-            steps {
-                withSonarQubeEnv('sonarcloud') {
-                    sh "./gradlew sonarqube -Dsonar.token=$SONAR_TOKEN"
-                }
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-        */
+        /* ================= CD ================ */
 
-        /* =========================
-         * 5️⃣ Docker Build & Scan (주석 처리)
-         * =========================
-        stage('5. Microservices Dockerizing') {
-            parallel {
-                stage('Service: User') { steps { buildAndScan('user') } }
-                stage('Service: Cart') { steps { buildAndScan('cart') } }
-                stage('Service: Order') { steps { buildAndScan('order') } }
-                stage('Service: Payment') { steps { buildAndScan('payment') } }
-                stage('Service: Product') { steps { buildAndScan('product') } }
+        stage('CD') {
+            when {
+                allOf {
+                    branch 'main'
+                    expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                }
+            }
+
+            stages {
+
+                stage('ECR Login') {
+                    steps {
+                        withCredentials([[
+                            $class: 'AmazonWebServicesCredentialsBinding',
+                            credentialsId: 'aws-ecr-credential'
+                        ]]) {
+                            sh '''
+                              aws ecr get-login-password --region $AWS_REGION \
+                              | docker login --username AWS --password-stdin $ECR_REGISTRY
+                            '''
+                        }
+                    }
+                }
+
+                stage('Push Images') {
+                    steps {
+                        withCredentials([[
+                            $class: 'AmazonWebServicesCredentialsBinding',
+                            credentialsId: 'aws-ecr-credential'
+                        ]]) {
+                            script {
+                                parallel CHANGED_SERVICES.collectEntries { svc ->
+                                    [(svc): { pushImage(svc) }]
+                                }
+                            }
+                        }
+                    }
+                }
+
+                stage('Deploy ECS (Update Service)') {
+                    steps {
+                        withCredentials([[
+                            $class: 'AmazonWebServicesCredentialsBinding',
+                            credentialsId: 'aws-ecr-credential'
+                        ]]) {
+                            script {
+                                parallel CHANGED_SERVICES.collectEntries { svc ->
+                                    [(svc): { deployService(svc) }]
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-        */
     }
 
     post {
         success {
-            echo '✅ 모든 모듈의 JAR 빌드가 성공적으로 완료되었습니다!'
+            slackSend(
+                channel: SLACK_CHANNEL,
+                message: "✅ 성공\n브랜치: ${BRANCH_NAME}\n서비스: ${CHANGED_SERVICES.join(', ')}"
+            )
         }
         failure {
-            echo '❌ 빌드 실패!'
+            slackSend(
+                channel: SLACK_CHANNEL,
+                message: "❌ 실패\n브랜치: ${BRANCH_NAME}"
+            )
         }
-    }
-}
-
-/**
- * 나중에 주석 풀 때 사용할 Docker 빌드 함수 (구조 유지)
- */
-def buildAndScan(serviceName) {
-    def fullImageName = "${DOCKER_REGISTRY}/msa-${serviceName}:${IMAGE_TAG}"
-    def projectDir = "service/${serviceName}"
-    script {
-        sh "echo 'Building ${fullImageName} from ${projectDir}'"
-        // sh "docker build -t ${fullImageName} ./${projectDir}"
-        // sh "trivy image --severity HIGH,CRITICAL --exit-code 1 ${fullImageName}"
     }
 }
