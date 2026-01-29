@@ -27,6 +27,14 @@ pipeline {
         /* ================= CI ================= */
 
         stage('CI') {
+            stage('Force Fail (Slack Test)') {
+              when { branch 'test4' }   // 원하는 브랜치로 바꿔도 됨
+              steps {
+                error("Forced failure to test slack failure notify")
+                // 또는: sh 'exit 1'
+              }
+            }
+
             stages {
 
                 stage('Detect Changes') {
