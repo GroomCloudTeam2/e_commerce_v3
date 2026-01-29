@@ -33,7 +33,7 @@ pipeline {
                     steps {
                         script {
                             CHANGED_SERVICES = getChangedServices()
-                            echo "🔍 Changed services: ${CHANGED_SERVICES}"
+                            echo "Changed services: ${CHANGED_SERVICES}"
                         }
                     }
                 }
