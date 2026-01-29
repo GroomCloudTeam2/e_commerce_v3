@@ -11,7 +11,7 @@ pipeline {
         ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
         IMAGE_TAG = "${BUILD_NUMBER}-${GIT_COMMIT[0..7]}"
-        SLACK_CHANNEL = "#deploy"
+        SLACK_CHANNEL = "#jenkins-alerts"
 
         ECS_CLUSTER = "courm-cluster-prod"
     }
