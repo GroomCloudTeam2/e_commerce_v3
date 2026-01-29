@@ -46,12 +46,11 @@ public class PaymentCommandService {
 	@Transactional
 	public void createReady(UUID orderId, Long amount) {
 		paymentRepository.findByOrderId(orderId)
-			.ifPresentOrElse(
-				existing -> {
-					// 멱등: 이미 있으면 아무것도 안 함
-				},
-				() -> paymentRepository.save(Payment.ready(orderId, amount, PG_TOSS))
-			);
+				.ifPresentOrElse(
+						existing -> {
+							// 멱등: 이미 있으면 아무것도 안 함
+						},
+						() -> paymentRepository.save(Payment.ready(orderId, amount, PG_TOSS)));
 	}
 
 	/**
@@ -62,12 +61,17 @@ public class PaymentCommandService {
 		UUID orderId = req.orderId();
 
 		Payment payment = paymentRepository.findByOrderId(orderId)
-			.orElseThrow(() -> new PaymentException(PAYMENT_NOT_FOUND, "Payment not found. orderId=" + orderId));
+				.orElseThrow(() -> new PaymentException(PAYMENT_NOT_FOUND, "Payment not found. orderId=" + orderId));
 
-		if (payment.getStatus() == PaymentStatus.PAID) return ResPayment.from(payment);
-		if (payment.getStatus() == PaymentStatus.CANCELLED) throw new PaymentException(PAYMENT_ALREADY_CANCELLED, "Payment already cancelled.");
-		if (payment.getStatus() == PaymentStatus.FAILED) throw new PaymentException(PAYMENT_ALREADY_FAILED, "Payment already failed.");
-		if (payment.getStatus() != PaymentStatus.READY) throw new PaymentException(PAYMENT_NOT_CONFIRMABLE, "Payment not confirmable. status=" + payment.getStatus());
+		if (payment.getStatus() == PaymentStatus.PAID)
+			return ResPayment.from(payment);
+		if (payment.getStatus() == PaymentStatus.CANCELLED)
+			throw new PaymentException(PAYMENT_ALREADY_CANCELLED, "Payment already cancelled.");
+		if (payment.getStatus() == PaymentStatus.FAILED)
+			throw new PaymentException(PAYMENT_ALREADY_FAILED, "Payment already failed.");
+		if (payment.getStatus() != PaymentStatus.READY)
+			throw new PaymentException(PAYMENT_NOT_CONFIRMABLE,
+					"Payment not confirmable. status=" + payment.getStatus());
 
 		Long amount = payment.getAmount();
 
@@ -75,8 +79,7 @@ public class PaymentCommandService {
 		try {
 			// Executor를 통해 호출 (AOP 적용됨)
 			tossRes = tossPaymentExecutor.executeConfirm(
-				new TossConfirmRequest(req.paymentKey(), orderId.toString(), amount)
-			);
+					new TossConfirmRequest(req.paymentKey(), orderId.toString(), amount));
 
 		} catch (TossApiException e) {
 			// Toss가 명시적으로 4xx, 5xx 에러 응답을 준 경우 (Business Exception)
@@ -118,10 +121,10 @@ public class PaymentCommandService {
 		payment.markFailed("TOSS_NOT_DONE", "Toss status=" + tossStatus);
 		paymentRepository.save(payment);
 
-		paymentEventPublisher.publishPaymentFailed(orderId, req.paymentKey(), amount, "TOSS_NOT_DONE", "status=" + tossStatus);
+		paymentEventPublisher.publishPaymentFailed(orderId, req.paymentKey(), amount, "TOSS_NOT_DONE",
+				"status=" + tossStatus);
 		throw new PaymentException(PAYMENT_NOT_DONE, "Toss payment status is not DONE. status=" + tossStatus);
 	}
-
 
 	/**
 	 * 결제 취소(환불)
@@ -131,7 +134,7 @@ public class PaymentCommandService {
 		UUID orderId = req.orderId();
 
 		Payment payment = paymentRepository.findByOrderId(orderId)
-			.orElseThrow(() -> new PaymentException(PAYMENT_NOT_FOUND, "Payment not found. orderId=" + orderId));
+				.orElseThrow(() -> new PaymentException(PAYMENT_NOT_FOUND, "Payment not found. orderId=" + orderId));
 
 		if (payment.getStatus() == PaymentStatus.CANCELLED) {
 			return ResCancelResult.from(payment, true, "ALREADY_CANCELLED");
@@ -148,16 +151,15 @@ public class PaymentCommandService {
 
 		Long cancelAmount = payment.getAmount();
 		String cancelReason = (req.cancelReason() == null || req.cancelReason().isBlank())
-			? "ORDER_CANCELLED"
-			: req.cancelReason();
+				? "ORDER_CANCELLED"
+				: req.cancelReason();
 
 		TossCancelResponse tossRes;
 		try {
 			// [변경] Executor를 통해 호출 (AOP 적용됨)
 			tossRes = tossPaymentExecutor.executeCancel(
-				paymentKey,
-				new TossCancelRequest(cancelAmount, cancelReason)
-			);
+					paymentKey,
+					new TossCancelRequest(cancelAmount, cancelReason));
 		} catch (TossApiException e) {
 			String failCode = e.getErrorCode().getCode();
 			String failMessage = e.getErrorCode().getMessage();
@@ -183,11 +185,10 @@ public class PaymentCommandService {
 
 		if ("CANCELED".equalsIgnoreCase(tossStatus) || "PARTIAL_CANCELED".equalsIgnoreCase(tossStatus)) {
 			PaymentCancel cancel = PaymentCancel.of(
-				payment.getPaymentId(),
-				paymentKey,
-				cancelAmount,
-				LocalDateTime.now()
-			);
+					payment.getPaymentId(),
+					paymentKey,
+					cancelAmount,
+					LocalDateTime.now());
 			paymentCancelRepository.save(cancel);
 
 			payment.markCancelled();
