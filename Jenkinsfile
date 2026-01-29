@@ -108,7 +108,7 @@ pipeline {
                     steps {
                         script {
                             parallel CHANGED_SERVICES.collectEntries { svc ->
-                                [(svc): { deployService(serviceName: svc) }]  // ← Map으로 전달
+                                [(svc): { deployService(serviceName: svc) }]  //
                             }
                         }
                     }
