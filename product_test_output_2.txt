@@ -1,0 +1,38 @@
+Starting a Gradle Daemon, 1 busy and 8 stopped Daemons could not be reused, use --status for details
+> Task :service:common:compileJava UP-TO-DATE
+> Task :service:common:processResources NO-SOURCE
+> Task :service:common:classes UP-TO-DATE
+> Task :service:common:jar UP-TO-DATE
+> Task :service:product:compileJava
+> Task :service:product:processResources UP-TO-DATE
+> Task :service:product:classes
+> Task :service:product:compileTestJava UP-TO-DATE
+> Task :service:product:processTestResources NO-SOURCE
+> Task :service:product:testClasses UP-TO-DATE
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+
+> Task :service:product:test
+
+ProductKafkaIntegrationTest > Product Flow: Payment Completed -> Stock Deduction Failed FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:180
+        Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException at ConstructorResolver.java:804
+            Caused by: org.springframework.beans.factory.NoSuchBeanDefinitionException at DefaultListableBeanFactory.java:2315
+
+ProductKafkaIntegrationTest > Product Flow: Payment Completed -> Stock Deducted FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:145
+
+2 tests completed, 2 failed
+
+> Task :service:product:test FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':service:product:test'.
+> There were failing tests. See the report at: file:///Users/jimin/e_commerce_v3/e_commerce_v3/service/product/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 19s
+6 actionable tasks: 2 executed, 4 up-to-date

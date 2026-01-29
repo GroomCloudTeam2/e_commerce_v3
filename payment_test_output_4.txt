@@ -1,0 +1,27 @@
+> Task :service:common:compileJava UP-TO-DATE
+> Task :service:common:processResources NO-SOURCE
+> Task :service:common:classes UP-TO-DATE
+> Task :service:common:jar UP-TO-DATE
+> Task :service:payment:compileJava UP-TO-DATE
+> Task :service:payment:processResources UP-TO-DATE
+> Task :service:payment:classes UP-TO-DATE
+
+> Task :service:payment:compileTestJava
+/Users/jimin/e_commerce_v3/e_commerce_v3/service/payment/src/test/java/com/groom/payment/infrastructure/kafka/PaymentKafkaIntegrationTest.java:83: warning: [removal] MockBean in org.springframework.boot.test.mock.mockito has been deprecated and marked for removal
+    @MockBean
+     ^
+/Users/jimin/e_commerce_v3/e_commerce_v3/service/payment/src/test/java/com/groom/payment/infrastructure/kafka/PaymentKafkaIntegrationTest.java:95: warning: [removal] SpyBean in org.springframework.boot.test.mock.mockito has been deprecated and marked for removal
+    @org.springframework.boot.test.mock.mockito.SpyBean
+                                               ^
+2 warnings
+
+> Task :service:payment:processTestResources UP-TO-DATE
+> Task :service:payment:testClasses
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+> Task :service:payment:test
+
+[Incubating] Problems report is available at: file:///Users/jimin/e_commerce_v3/e_commerce_v3/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 21s
+7 actionable tasks: 2 executed, 5 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.3.0/userguide/configuration_cache_enabling.html

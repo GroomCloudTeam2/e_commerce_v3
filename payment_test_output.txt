@@ -1,0 +1,58 @@
+> Task :service:common:compileJava UP-TO-DATE
+> Task :service:common:processResources NO-SOURCE
+> Task :service:common:classes UP-TO-DATE
+> Task :service:common:jar UP-TO-DATE
+> Task :service:payment:compileJava
+> Task :service:payment:processResources UP-TO-DATE
+> Task :service:payment:classes
+
+> Task :service:payment:compileTestJava
+/Users/jimin/e_commerce_v3/e_commerce_v3/service/payment/src/test/java/com/groom/payment/infrastructure/kafka/PaymentKafkaIntegrationTest.java:83: warning: [removal] MockBean in org.springframework.boot.test.mock.mockito has been deprecated and marked for removal
+    @MockBean
+     ^
+/Users/jimin/e_commerce_v3/e_commerce_v3/service/payment/src/test/java/com/groom/payment/infrastructure/kafka/PaymentKafkaIntegrationTest.java:95: warning: [removal] SpyBean in org.springframework.boot.test.mock.mockito has been deprecated and marked for removal
+    @org.springframework.boot.test.mock.mockito.SpyBean
+                                               ^
+2 warnings
+
+> Task :service:payment:processTestResources UP-TO-DATE
+> Task :service:payment:testClasses
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+
+> Task :service:payment:test
+
+PaymentKafkaIntegrationTest > Payment Failed -> PaymentFailedEvent Published FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:180
+        Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException at ConstructorResolver.java:804
+            Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException at ConstructorResolver.java:804
+                Caused by: org.springframework.beans.factory.NoSuchBeanDefinitionException at DefaultListableBeanFactory.java:2315
+
+PaymentKafkaIntegrationTest > Payment Confirmed -> PaymentCompletedEvent Published FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:145
+
+PaymentKafkaIntegrationTest > Refund Succeeded -> RefundSucceededEvent Published FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:145
+
+PaymentKafkaIntegrationTest > Payment Flow: Order Created -> Payment Ready FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:145
+
+PaymentKafkaIntegrationTest > Refund Failed -> RefundFailEvent Published FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:145
+
+5 tests completed, 5 failed
+
+> Task :service:payment:test FAILED
+
+[Incubating] Problems report is available at: file:///Users/jimin/e_commerce_v3/e_commerce_v3/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':service:payment:test'.
+> There were failing tests. See the report at: file:///Users/jimin/e_commerce_v3/e_commerce_v3/service/payment/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 14s
+7 actionable tasks: 3 executed, 4 up-to-date

@@ -23,7 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 public class ProductEventProducer {
-
+    // @SuppressWarnings("rawtypes")
+    // private final KafkaTemplate kafkaTemplate;
     private final KafkaTemplate<String, EventEnvelope> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
@@ -68,7 +69,10 @@ public class ProductEventProducer {
                     .payload(objectMapper.writeValueAsString(payload))
                     .build();
 
-            publishAfterCommit(payload.getOrderId().toString(), envelope);
+            // 트랜잭션 롤백 여부와 관계없이 실패 이벤트는 발행해야 함 (또는 afterCompletion 사용)
+            // 여기서는 즉시 발행으로 변경
+            @SuppressWarnings("unchecked")
+            var future = kafkaTemplate.send(topic, payload.getOrderId().toString(), envelope);
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize payload", e);
         }

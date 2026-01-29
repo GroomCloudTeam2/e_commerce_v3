@@ -78,6 +78,7 @@ public class ProductEventListener {
 							.orderId(event.getOrderId())
 							.items(deductedItems)
 							.build());
+			System.out.println("DEBUG: Called publishStockDeducted");
 
 			log.info("[Product] 재고 확정 차감 완료 - orderId: {}", event.getOrderId());
 
