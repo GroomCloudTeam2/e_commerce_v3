@@ -13,7 +13,7 @@ spring:
   application:
     name: service-cart
   datasource:
-    url: jdbc:postgresql://courm-rds-product-prod.c9iosg68k3c4.ap-northeast-2.rds.amazonaws.com:5432/cart_db
+    url: jdbc:postgresql://54.180.118.211:5432/cart_db
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
