@@ -28,11 +28,6 @@ pipeline {
 
         stage('CI') {
             stages {
-                stage('🚨 FAIL TEST') {
-                    steps {
-                        error("알람 테스트용 강제 실패")
-                        }
-                    }
 
                 stage('Detect Changes') {
                     steps {
@@ -75,54 +70,6 @@ pipeline {
                         }
                     }
                 }
-
-//                 stage('Image Scan (Trivy)') {
-//                     when {
-//                         expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
-//                     }
-//                     steps {
-//                         script {
-//                             // 리포트 디렉토리 생성
-//                             sh 'mkdir -p trivy-reports'
-//
-//                             parallel CHANGED_SERVICES.collectEntries { svc ->
-//                                 [(svc): {
-//                                     def imageName = "${ECR_REGISTRY}/goorm-${svc}:${IMAGE_TAG}"
-//
-//                                     echo "🔍 Scanning image: ${imageName}"
-//
-//                                     // 콘솔 출력용 (테이블)
-//                                     sh """
-//                                         docker run --rm \
-//                                             -v /var/run/docker.sock:/var/run/docker.sock \
-//                                             aquasec/trivy:latest image \
-//                                             --severity HIGH,CRITICAL \
-//                                             --exit-code 0 \
-//                                             --no-progress \
-//                                             ${imageName}
-//                                     """
-//
-//                                     // JSON 리포트 저장
-//                                     sh """
-//                                         docker run --rm \
-//                                             -v /var/run/docker.sock:/var/run/docker.sock \
-//                                             -v ${WORKSPACE}/trivy-reports:/reports \
-//                                             aquasec/trivy:latest image \
-//                                             --severity HIGH,CRITICAL \
-//                                             --exit-code 0 \
-//                                             --format json \
-//                                             -o /reports/${svc}-report.json \
-//                                             ${imageName}
-//                                     """
-//
-//                                     echo "Scan complete for ${svc}"
-//                                 }]
-//                             }
-//                         }
-//                     }
-//                 }
-            }
-        }
 
         /* ================= CD ================= */
 
