@@ -83,6 +83,8 @@ pipeline {
                         }
                     }
                 }
+            }
+        }
 
         /* ================= CD ================= */
 
@@ -99,8 +101,8 @@ pipeline {
                 stage('ECR Login') {
                     steps {
                         sh '''
-                            aws ecr get-login-password --region $AWS_REGION \
-                            | docker login --username AWS --password-stdin $ECR_REGISTRY
+                          aws ecr get-login-password --region $AWS_REGION \
+                          | docker login --username AWS --password-stdin $ECR_REGISTRY
                         '''
                     }
                 }
@@ -127,16 +129,24 @@ pipeline {
             }
         }
     }
+
     post {
-      success {
-        slackNotify(status: 'SUCCESS', channel: SLACK_CHANNEL, services: CHANGED_SERVICES)
-      }
-      failure {
-        slackNotify(status: 'FAILURE', channel: SLACK_CHANNEL, services: CHANGED_SERVICES)
-      }
-      always {
-        archiveArtifacts artifacts: 'trivy-reports/*.json', allowEmptyArchive: true
-      }
+        success {
+            slackNotify(
+                status: 'SUCCESS',
+                channel: SLACK_CHANNEL,
+                services: CHANGED_SERVICES
+            )
+        }
+        failure {
+            slackNotify(
+                status: 'FAILURE',
+                channel: SLACK_CHANNEL,
+                services: CHANGED_SERVICES
+            )
+        }
+        always {
+            archiveArtifacts artifacts: 'trivy-reports/*.json', allowEmptyArchive: true
+        }
     }
 }
-
