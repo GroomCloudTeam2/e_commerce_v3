@@ -85,6 +85,24 @@ pipeline {
                 }
             }
         }
+                stage('Trivy Image Scan') {
+                    when {
+                        expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                    }
+                    steps {
+                        script {
+                            def tasks = [:]
+
+                            CHANGED_SERVICES.each { svc ->
+                                tasks[svc] = {
+                                   trivyScan(svc, IMAGE_TAG)
+                                }
+                            }
+                            parallel tasks
+                        }
+                    }
+                }
+
 
         /* ================= CD ================= */
 
