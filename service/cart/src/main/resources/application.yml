@@ -1,6 +1,8 @@
 server:
   port: 8080
 
+# testtesttest
+
 management:
   endpoints:
     web:
@@ -13,7 +15,7 @@ spring:
   application:
     name: service-cart
   datasource:
-    url: jdbc:postgresql://courm-rds-product-prod.c9iosg68k3c4.ap-northeast-2.rds.amazonaws.com:5432/cart_db
+    url: jdbc:postgresql://54.180.118.211:5432/cart_db
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -31,7 +33,7 @@ spring:
       port: 6379
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: 10.0.20.101:9092,10.0.20.35:9092,10.0.21.159:9092
     consumer:
       key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
