@@ -34,7 +34,7 @@ import lombok.RequiredArgsConstructor;
 @Tag(name = "Order", description = "주문 생성 및 조회 관련 API") // 1. API 그룹 이름
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/orders")
+@RequestMapping("/api/v2/orders")
 public class OrderController {
 
 	private final OrderService orderService;

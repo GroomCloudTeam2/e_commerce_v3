@@ -37,7 +37,8 @@ public class SecurityConfig {
 				.csrf(AbstractHttpConfigurer::disable)
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/test/**", "/swagger-ui/**", "/v3/api-docs/**","/api/orders/**").permitAll()
+						.requestMatchers("/test/**", "/swagger-ui/**", "/v3/api-docs/**", "/api/v2/orders/**")
+						.permitAll()
 						// http
 						// .csrf(csrf -> csrf.disable()) // 테스트를 위해 CSRF 비활성화
 						// .authorizeHttpRequests(auth -> auth
@@ -46,20 +47,20 @@ public class SecurityConfig {
 						// .anyRequest().authenticated())
 						// .authorizeHttpRequests(auth -> auth
 						// 인증/회원가입
-						.requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login").permitAll()
+						.requestMatchers("/api/v2/auth/signup", "/api/v2/auth/login").permitAll()
 
 						// 결제 관련 엔드포인트 (ready/success/fail/confirm 등 포함)
-						.requestMatchers("/api/v1/payments/**").permitAll()
+						.requestMatchers("/api/v2/payments/**").permitAll()
 
 						// 상품 공개 API (구매자용)
-						.requestMatchers("/api/v1/products", "/api/v1/products/{productId}").permitAll()
+						.requestMatchers("/api/v2/products", "/api/v2/products/{productId}").permitAll()
 
 						// 내부 API (서비스 간 통신용)
-						.requestMatchers("/api/v1/internal/**").permitAll()
+						.requestMatchers("/api/v2/internal/**").permitAll()
 						.requestMatchers("/actuator/**","/internal/**").permitAll()
 
 						// 카테고리 공개 API
-						.requestMatchers("/api/v1/categories", "/api/v1/categories/{categoryId}").permitAll()
+						.requestMatchers("/api/v2/categories", "/api/v2/categories/{categoryId}").permitAll()
 
 						// Swagger
 						.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
