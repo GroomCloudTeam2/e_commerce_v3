@@ -1,5 +1,7 @@
 server:
-  port: 8082
+  port: 8080
+
+#!@#@!#!@#@!123123112213
 
 spring:
   application:
@@ -21,12 +23,11 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   data:
     redis:
-      #host: localhost
-      host: local-redis
+      host: localhost
       port: 6379
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: 10.0.20.113:9092,10.0.20.89:9092,10.0.21.141:9092
     consumer:
       key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
