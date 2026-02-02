@@ -13,7 +13,9 @@ services:
       - local-db
       - local-redis
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=10.0.20.101:9092,10.0.20.35:9092,10.0.21.159:9092
+      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
+      - SERVER_PORT=8080
+      #- KAFKA_BOOTSTRAP_SERVERS=10.0.20.101:9092,10.0.20.35:9092,10.0.21.159:9092
 
   cart:
     build:
@@ -27,8 +29,9 @@ services:
       - local-db
       - local-redis
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=10.0.20.101:9092,10.0.20.35:9092,10.0.21.159:9092
-
+      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
+      - SERVER_PORT=8080
+      #- KAFKA_BOOTSTRAP_SERVERS=10.0.20.101:9092,10.0.20.35:9092,10.0.21.159:9092
   order:
     build:
       context: .
@@ -41,7 +44,9 @@ services:
       - local-db
       - local-redis
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=10.0.20.101:9092,10.0.20.35:9092,10.0.21.159:9092
+      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
+      - SERVER_PORT=8080
+      #- KAFKA_BOOTSTRAP_SERVERS=10.0.20.101:9092,10.0.20.35:9092,10.0.21.159:9092
 
   payment:
     build:
@@ -55,7 +60,9 @@ services:
       - local-db
       - local-redis
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=10.0.20.101:9092,10.0.20.35:9092,10.0.21.159:9092
+      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
+      - SERVER_PORT=8080
+      #- KAFKA_BOOTSTRAP_SERVERS=10.0.20.101:9092,10.0.20.35:9092,10.0.21.159:9092
 
   product:
     build:
@@ -69,7 +76,9 @@ services:
       - local-db
       - local-redis
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=10.0.20.101:9092,10.0.20.35:9092,10.0.21.159:9092
+      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
+      - SERVER_PORT=8080
+      #- KAFKA_BOOTSTRAP_SERVERS=10.0.20.101:9092,10.0.20.35:9092,10.0.21.159:9092
 
 # services:
    # 1. PostgreSQL 설정
