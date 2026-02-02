@@ -27,9 +27,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "Product (Public)", description = "상품 공개 API")
+@Tag(name = "Product", description = "상품 API")
 @RestController
-@RequestMapping("/api/v1/products")
+@RequestMapping("/api/v2/products")
 @RequiredArgsConstructor
 public class ProductPublicControllerV1 {
 
@@ -47,14 +47,13 @@ public class ProductPublicControllerV1 {
 	@Operation(summary = "상품 목록 조회", description = "구매자가 상품 목록을 조회합니다. (검색, 필터, 정렬 지원)")
 	@GetMapping
 	public ResponseEntity<Page<ResProductSearchDtoV1>> searchProducts(
-		@Parameter(description = "카테고리 ID") @RequestParam(required = false) UUID categoryId,
-		@Parameter(description = "검색어 (상품명)") @RequestParam(required = false) String keyword,
-		@Parameter(description = "최소 가격") @RequestParam(required = false) Long minPrice,
-		@Parameter(description = "최대 가격") @RequestParam(required = false) Long maxPrice,
-		@Parameter(description = "정렬 (price_asc, price_desc, newest, rating)") @RequestParam(required = false, defaultValue = "newest") String sort,
-		@Parameter(description = "페이지 번호 (1부터 시작)") @RequestParam(required = false, defaultValue = "1") Integer page,
-		@Parameter(description = "페이지 크기") @RequestParam(required = false, defaultValue = "20") Integer size
-	) {
+			@Parameter(description = "카테고리 ID") @RequestParam(required = false) UUID categoryId,
+			@Parameter(description = "검색어 (상품명)") @RequestParam(required = false) String keyword,
+			@Parameter(description = "최소 가격") @RequestParam(required = false) Long minPrice,
+			@Parameter(description = "최대 가격") @RequestParam(required = false) Long maxPrice,
+			@Parameter(description = "정렬 (price_asc, price_desc, newest, rating)") @RequestParam(required = false, defaultValue = "newest") String sort,
+			@Parameter(description = "페이지 번호 (1부터 시작)") @RequestParam(required = false, defaultValue = "1") Integer page,
+			@Parameter(description = "페이지 크기") @RequestParam(required = false, defaultValue = "20") Integer size) {
 		ProductSortType sortType = ProductSortType.fromValue(sort);
 		// 명세에서는 page가 1부터 시작하므로, 0-based로 변환
 		Pageable pageable = PageRequest.of(Math.max(0, page - 1), size);
@@ -63,17 +62,16 @@ public class ProductPublicControllerV1 {
 
 		// 단순 카테고리 조회 (필터 없음, 최신순) → Redis 캐시 사용
 		boolean isSimpleQuery = (keyword == null || keyword.isBlank())
-			&& minPrice == null
-			&& maxPrice == null
-			&& (sortType == null || sortType == ProductSortType.NEWEST);
+				&& minPrice == null
+				&& maxPrice == null
+				&& (sortType == null || sortType == ProductSortType.NEWEST);
 
 		if (isSimpleQuery) {
 			response = productReadService.getProductList(categoryId, pageable);
 		} else {
 			// 복잡한 검색 (필터/정렬) → DB 직접 조회
 			response = productService.searchProducts(
-				categoryId, keyword, minPrice, maxPrice, sortType, pageable
-			);
+					categoryId, keyword, minPrice, maxPrice, sortType, pageable);
 		}
 
 		return ResponseEntity.ok(response);
@@ -82,8 +80,7 @@ public class ProductPublicControllerV1 {
 	@Operation(summary = "상품 상세 조회", description = "구매자가 상품 상세 정보를 조회합니다.")
 	@GetMapping("/{productId}")
 	public ResponseEntity<ResProductDetailDtoV1> getProductDetail(
-		@Parameter(description = "상품 ID") @PathVariable UUID productId
-	) {
+			@Parameter(description = "상품 ID") @PathVariable UUID productId) {
 		// Redis 캐시 조회 → 캐시 미스 시 DB Fallback (내부 처리)
 		ResProductDetailDtoV1 response = productReadService.getProductDetail(productId);
 

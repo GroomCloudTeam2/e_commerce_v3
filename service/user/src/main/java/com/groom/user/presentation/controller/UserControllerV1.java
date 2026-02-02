@@ -28,7 +28,7 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "User", description = "사용자 API")
 @RestController
-@RequestMapping("/api/v1/users/me")
+@RequestMapping("/api/v2/users/me")
 @RequiredArgsConstructor
 public class UserControllerV1 {
 
@@ -43,8 +43,8 @@ public class UserControllerV1 {
 	@Operation(summary = "내 정보 수정")
 	@PatchMapping
 	public ResponseEntity<Void> updateMe(
-		@AuthenticationPrincipal CustomUserDetails user,
-		@Valid @RequestBody ReqUpdateUserDtoV1 request) {
+			@AuthenticationPrincipal CustomUserDetails user,
+			@Valid @RequestBody ReqUpdateUserDtoV1 request) {
 		userService.updateMe(request);
 		return ResponseEntity.ok().build();
 	}
@@ -59,9 +59,9 @@ public class UserControllerV1 {
 	@Operation(summary = "매출 통계 조회 (OWNER only)")
 	@GetMapping("/sales")
 	public ResponseEntity<List<ResSalesStatDtoV1>> getSalesStats(
-		@AuthenticationPrincipal CustomUserDetails user,
-		@RequestParam PeriodType periodType,
-		@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+			@AuthenticationPrincipal CustomUserDetails user,
+			@RequestParam PeriodType periodType,
+			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 		return ResponseEntity.ok(userService.getSalesStats(periodType, date));
 	}
 }

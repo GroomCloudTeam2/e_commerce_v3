@@ -1,21 +1,12 @@
 server:
   port: 8080
 
-# !@#!@#!@#@!
-
-management:
-  endpoints:
-    web:
-      base-path: /actuator
-  endpoint:
-    health:
-      enabled: true
-
 spring:
   application:
     name: service-cart
   datasource:
-    url: jdbc:postgresql://54.180.118.211:5432/payment_db
+    #url: jdbc:postgresql://localhost:5432/payment_db
+    url: jdbc:postgresql://database-1.cluster-c9iosg68k3c4.ap-northeast-2.rds.amazonaws.com:5432/payment_db
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -33,7 +24,7 @@ spring:
       port: 6379
 
   kafka:
-    bootstrap-servers: 10.0.20.101:9092,10.0.20.35:9092,10.0.21.159:9092
+    bootstrap-servers: 10.0.20.113:9092,10.0.20.89:9092,10.0.21.141:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -82,7 +73,7 @@ logging:
 
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
 

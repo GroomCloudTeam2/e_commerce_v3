@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Category", description = "카테고리 API")
 @RestController
-@RequestMapping("/api/v1/categories")
+@RequestMapping("/api/v2/categories")
 @RequiredArgsConstructor
 public class CategoryControllerV1 {
 
@@ -28,8 +28,7 @@ public class CategoryControllerV1 {
 	@Operation(summary = "카테고리 목록 조회")
 	@GetMapping
 	public ResponseEntity<List<ResCategoryDtoV1>> getCategories(
-		@RequestParam(required = false) UUID parentId
-	) {
+			@RequestParam(required = false) UUID parentId) {
 		List<ResCategoryDtoV1> categories;
 		if (parentId == null) {
 			categories = categoryService.getAllCategories();
@@ -42,8 +41,7 @@ public class CategoryControllerV1 {
 	@Operation(summary = "카테고리 상세 조회")
 	@GetMapping("/{categoryId}")
 	public ResponseEntity<ResCategoryDtoV1> getCategory(
-		@PathVariable UUID categoryId
-	) {
+			@PathVariable UUID categoryId) {
 		ResCategoryDtoV1 category = categoryService.getCategory(categoryId);
 		return ResponseEntity.ok(category);
 	}
