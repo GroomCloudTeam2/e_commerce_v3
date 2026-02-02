@@ -26,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "User", description = "배송지 API")
 @RestController
-@RequestMapping("/api/v1/users/me/addresses")
+@RequestMapping("/api/v2/users/me/addresses")
 @RequiredArgsConstructor
 public class AddressControllerV1 {
 
@@ -41,8 +41,8 @@ public class AddressControllerV1 {
 	@Operation(summary = "배송지 등록")
 	@PostMapping
 	public ResponseEntity<Void> createAddress(
-		@AuthenticationPrincipal CustomUserDetails user,
-		@Valid @RequestBody ReqAddressDtoV1 request) {
+			@AuthenticationPrincipal CustomUserDetails user,
+			@Valid @RequestBody ReqAddressDtoV1 request) {
 		addressService.createAddress(user.getUserId(), request);
 		return ResponseEntity.ok().build();
 	}
@@ -50,9 +50,9 @@ public class AddressControllerV1 {
 	@Operation(summary = "배송지 수정")
 	@PutMapping("/{addressId}")
 	public ResponseEntity<Void> updateAddress(
-		@AuthenticationPrincipal CustomUserDetails user,
-		@PathVariable UUID addressId,
-		@Valid @RequestBody ReqAddressDtoV1 request) {
+			@AuthenticationPrincipal CustomUserDetails user,
+			@PathVariable UUID addressId,
+			@Valid @RequestBody ReqAddressDtoV1 request) {
 		addressService.updateAddress(user.getUserId(), addressId, request);
 		return ResponseEntity.ok().build();
 	}
@@ -60,8 +60,8 @@ public class AddressControllerV1 {
 	@Operation(summary = "배송지 삭제")
 	@DeleteMapping("/{addressId}")
 	public ResponseEntity<Void> deleteAddress(
-		@AuthenticationPrincipal CustomUserDetails user,
-		@PathVariable UUID addressId) {
+			@AuthenticationPrincipal CustomUserDetails user,
+			@PathVariable UUID addressId) {
 		addressService.deleteAddress(user.getUserId(), addressId);
 		return ResponseEntity.ok().build();
 	}
@@ -69,8 +69,8 @@ public class AddressControllerV1 {
 	@Operation(summary = "기본 배송지 설정")
 	@PostMapping("/{addressId}/set-default")
 	public ResponseEntity<Void> setDefaultAddress(
-		@AuthenticationPrincipal CustomUserDetails user,
-		@PathVariable UUID addressId) {
+			@AuthenticationPrincipal CustomUserDetails user,
+			@PathVariable UUID addressId) {
 		addressService.setDefaultAddress(user.getUserId(), addressId);
 		return ResponseEntity.ok().build();
 	}
