@@ -1,5 +1,6 @@
 package com.groom.user.presentation.dto.request.user;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.groom.common.enums.UserRole;
 
 import jakarta.validation.constraints.Email;
@@ -13,6 +14,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ReqSignupDtoV1 {
 
 	@NotBlank(message = "이메일은 필수입니다.")

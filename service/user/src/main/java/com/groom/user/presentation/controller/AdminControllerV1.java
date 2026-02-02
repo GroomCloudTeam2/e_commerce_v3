@@ -32,7 +32,7 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Admin", description = "관리자 API")
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping("/api/v2/admin")
 @RequiredArgsConstructor
 public class AdminControllerV1 {
 
@@ -94,7 +94,7 @@ public class AdminControllerV1 {
 	@PreAuthorize("hasAnyRole('MANAGER', 'MASTER')")
 	@GetMapping("/owners/pending")
 	public ResponseEntity<ResOwnerApprovalListDtoV1> getPendingOwnerList(
-		@PageableDefault(size = 20) Pageable pageable) {
+			@PageableDefault(size = 20) Pageable pageable) {
 		return ResponseEntity.ok(adminService.getPendingOwnerList(pageable));
 	}
 
@@ -102,8 +102,8 @@ public class AdminControllerV1 {
 	@PreAuthorize("hasAnyRole('MANAGER', 'MASTER')")
 	@GetMapping("/owners")
 	public ResponseEntity<ResOwnerApprovalListDtoV1> getOwnerListByStatus(
-		@RequestParam(defaultValue = "PENDING") OwnerStatus status,
-		@PageableDefault(size = 20) Pageable pageable) {
+			@RequestParam(defaultValue = "PENDING") OwnerStatus status,
+			@PageableDefault(size = 20) Pageable pageable) {
 		return ResponseEntity.ok(adminService.getOwnerListByStatus(status, pageable));
 	}
 
@@ -125,8 +125,8 @@ public class AdminControllerV1 {
 	@PreAuthorize("hasAnyRole('MANAGER', 'MASTER')")
 	@PostMapping("/owners/{ownerId}/reject")
 	public ResponseEntity<ResOwnerApprovalDtoV1> rejectOwner(
-		@PathVariable UUID ownerId,
-		@Valid @RequestBody ReqRejectOwnerDtoV1 request) {
+			@PathVariable UUID ownerId,
+			@Valid @RequestBody ReqRejectOwnerDtoV1 request) {
 		return ResponseEntity.ok(adminService.rejectOwner(ownerId, request.getRejectedReason()));
 	}
 }

@@ -6,7 +6,7 @@ spring:
     name: service-payment
   datasource:
     #url: jdbc:postgresql://localhost:5432/payment_db
-    url: jdbc:postgresql://local-db:5432/ecommerce
+    url: jdbc:postgresql://database-1.cluster-c9iosg68k3c4.ap-northeast-2.rds.amazonaws.com:5432/payment_db
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -74,7 +74,7 @@ logging:
 
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
 

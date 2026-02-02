@@ -1,5 +1,7 @@
 package com.groom.payment.presentation.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,9 +20,10 @@ import com.groom.payment.presentation.dto.response.ResReadyPayment;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Payment", description = "결제 관련 API")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/payments")
+@RequestMapping("/api/v2/payments")
 public class PaymentControllerV1 {
 
 	private final PaymentCommandService paymentCommandService;
