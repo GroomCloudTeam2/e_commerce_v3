@@ -7,10 +7,12 @@ spring:
   application:
     name: service-cart
   datasource:
+    #url: jdbc:postgresql://localhost:5432/cart_db
     url: jdbc:postgresql://database-1.cluster-c9iosg68k3c4.ap-northeast-2.rds.amazonaws.com:5432/cart_db
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -61,7 +63,7 @@ logging:
 
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
 
