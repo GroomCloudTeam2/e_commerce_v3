@@ -65,8 +65,11 @@ external:
 # Toss Payments Configuration
 toss:
   payments:
-    secret-key: your-toss-secret-key
+    client-key: ${TOSS_PAYMENTS_CLIENT_KEY:test_ck_dummy_key_for_testing}
+    secret-key: ${TOSS_PAYMENTS_SECRET_KEY:test_sk_dummy_key_for_testing}
     base-url: https://api.tosspayments.com
+    success-url: ${TOSS_PAYMENTS_SUCCESS_URL:http://localhost:8084/pay-success.html}
+    fail-url: ${TOSS_PAYMENTS_FAIL_URL:http://localhost:8084/pay-fail.html}
 
 logging:
   level:
