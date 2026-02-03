@@ -114,7 +114,7 @@ pipeline {
                         CHANGED_SERVICES.each { svc ->
                             sh """
                                 cd ${GITOPS_DIR}
-                                sed -i 's|tag:.*|tag: "${IMAGE_TAG}"|' ${GITOPS_VALUES_BASE}/${svc}/values.yaml
+                                sed -i 's|tag:.*|tag: "${IMAGE_TAG}"|' ${GITOPS_VALUES_BASE}/${svc}-service/values.yaml
                             """
                         }
                     }
