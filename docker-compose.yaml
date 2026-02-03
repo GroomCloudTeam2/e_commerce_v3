@@ -18,6 +18,11 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
       - SERVER_PORT=8080
+      - DB_HOST=local-db
+      - DB_PORT=5432
+      - DB_NAME=ecommerce
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
 
   cart:
     build:
@@ -36,6 +41,11 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
       - SERVER_PORT=8080
+      - DB_HOST=local-db
+      - DB_PORT=5432
+      - DB_NAME=ecommerce
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
 
   order:
     build:
@@ -54,6 +64,11 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
       - SERVER_PORT=8080
+      - DB_HOST=local-db
+      - DB_PORT=5432
+      - DB_NAME=ecommerce
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
 
   payment:
     build:
@@ -72,6 +87,11 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
       - SERVER_PORT=8080
+      - DB_HOST=local-db
+      - DB_PORT=5432
+      - DB_NAME=ecommerce
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
 
   product:
     build:
@@ -90,6 +110,11 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
       - SERVER_PORT=8080
+      - DB_HOST=local-db
+      - DB_PORT=5432
+      - DB_NAME=ecommerce
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
 
 # services:
    # 1. PostgreSQL 설정
