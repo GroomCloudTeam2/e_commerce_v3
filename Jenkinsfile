@@ -98,7 +98,11 @@ pipeline {
                 expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
             }
             steps {
-                withCredentials([string(credentialsId: 'github-token', variable: 'GIT_TOKEN')]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'github-token',
+                    usernameVariable: 'GIT_USER',
+                    passwordVariable: 'GIT_TOKEN'
+                )]) {
                     sh """
                         rm -rf ${GITOPS_DIR}
                         git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/GroomCloudTeam2/courm-helm.git ${GITOPS_DIR}
