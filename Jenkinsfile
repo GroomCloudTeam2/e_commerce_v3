@@ -131,15 +131,16 @@ pipeline {
                     usernameVariable: 'GIT_USER',
                     passwordVariable: 'GIT_TOKEN'
                 )]) {
-
-                    sh """
-                        rm -rf ${GITOPS_DIR}
-                        git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/GroomCloudTeam2/courm-helm.git ${GITOPS_DIR}
-                        cd ${GITOPS_DIR}
-                        git checkout ${GITOPS_BRANCH}
-                    """
-
                     script {
+                        def services = CHANGED_SERVICES.join(', ')
+
+                        sh '''
+                            rm -rf ${GITOPS_DIR}
+                            git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/GroomCloudTeam2/courm-helm.git ${GITOPS_DIR}
+                            cd ${GITOPS_DIR}
+                            git checkout ${GITOPS_BRANCH}
+                        '''
+
                         CHANGED_SERVICES.each { svc ->
                             sh """
                                 cd ${GITOPS_DIR}
@@ -147,16 +148,16 @@ pipeline {
                                 ${GITOPS_VALUES_BASE}/${svc}-service/values.yaml
                             """
                         }
-                    }
 
-                    sh """
-                        cd ${GITOPS_DIR}
-                        git config user.email "hyunho3445@gmail.com"
-                        git config user.name "yyytgf123"
-                        git add .
-                        git commit -m "Update services [${CHANGED_SERVICES.join(', ')}] to ${IMAGE_TAG}" || echo "No changes"
-                        git push origin ${GITOPS_BRANCH}
-                    """
+                        sh """
+                            cd ${GITOPS_DIR}
+                            git config user.email "hyunho3445@gmail.com"
+                            git config user.name "yyytgf123"
+                            git add .
+                            git commit -m "Update services [${services}] to ${IMAGE_TAG}" || echo "No changes"
+                            git push origin ${GITOPS_BRANCH}
+                        """
+                    }
                 }
             }
         }
@@ -164,18 +165,30 @@ pipeline {
 
     post {
         success {
-            slackNotify(
-                status: 'SUCCESS',
-                channel: SLACK_CHANNEL,
-                services: CHANGED_SERVICES
-            )
+            script {
+                try {
+                    slackNotify(
+                        status: 'SUCCESS',
+                        channel: SLACK_CHANNEL,
+                        services: CHANGED_SERVICES
+                    )
+                } catch (Exception e) {
+                    echo "Slack notification failed: ${e.message}"
+                }
+            }
         }
         failure {
-            slackNotify(
-                status: 'FAILURE',
-                channel: SLACK_CHANNEL,
-                services: CHANGED_SERVICES
-            )
+            script {
+                try {
+                    slackNotify(
+                        status: 'FAILURE',
+                        channel: SLACK_CHANNEL,
+                        services: CHANGED_SERVICES
+                    )
+                } catch (Exception e) {
+                    echo "Slack notification failed: ${e.message}"
+                }
+            }
         }
         always {
             archiveArtifacts artifacts: 'trivy-reports/*.json', allowEmptyArchive: true
