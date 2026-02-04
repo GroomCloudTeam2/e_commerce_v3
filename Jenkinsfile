@@ -16,7 +16,7 @@ pipeline {
 
         GITOPS_REPO_URL    = "https://github.com/GroomCloudTeam2/courm-helm.git"
         GITOPS_DIR         = "courm-helm"
-        GITOPS_BRANCH      = "local_test"
+        GITOPS_BRANCH      = "main"
         GITOPS_VALUES_BASE = "services"
 
         SLACK_CHANNEL = "#jenkins-alerts"
@@ -31,7 +31,7 @@ pipeline {
     stages {
 
         stage('CI') {
-            when { branch 'BlueGreen' }
+            when { branch 'main' }
             stages {
 
                 stage('Detect Changes') {
@@ -63,7 +63,7 @@ pipeline {
         stage('ECR Login') {
             when {
                 allOf {
-                    branch 'BlueGreen'
+                    branch 'main'
                     expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
                 }
             }
@@ -78,7 +78,7 @@ pipeline {
         stage('Docker Build & Push') {
             when {
                 allOf {
-                    branch 'BlueGreen'
+                    branch 'main'
                     expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
                 }
             }
