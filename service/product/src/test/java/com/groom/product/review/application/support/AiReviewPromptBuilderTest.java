@@ -6,11 +6,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.groom.product.review.domain.entity.ReviewCategory;
+import com.groom.product.review.domain.entity.ReviewEntity;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.groom.e_commerce.review.domain.entity.ReviewCategory;
-import com.groom.e_commerce.review.domain.entity.ReviewEntity;
+
 
 class AiReviewPromptBuilderTest {
 

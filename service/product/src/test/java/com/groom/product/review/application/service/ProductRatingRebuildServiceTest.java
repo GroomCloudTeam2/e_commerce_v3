@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.groom.product.review.domain.entity.ProductRatingEntity;
+import com.groom.product.review.domain.entity.ReviewEntity;
+import com.groom.product.review.domain.repository.ProductRatingRepository;
+import com.groom.product.review.domain.repository.ReviewRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,10 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.groom.e_commerce.review.domain.entity.ProductRatingEntity;
-import com.groom.e_commerce.review.domain.entity.ReviewEntity;
-import com.groom.e_commerce.review.domain.repository.ProductRatingRepository;
-import com.groom.e_commerce.review.domain.repository.ReviewRepository;
+
 
 @ExtendWith(MockitoExtension.class)
 class ProductRatingRebuildServiceTest {

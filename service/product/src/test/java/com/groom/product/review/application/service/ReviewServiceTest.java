@@ -7,6 +7,20 @@ import static org.mockito.Mockito.*;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.groom.common.enums.UserRole;
+import com.groom.product.review.application.event.ReviewCreatedEvent;
+import com.groom.product.review.application.validator.OrderReviewValidator;
+import com.groom.product.review.domain.entity.ProductRatingEntity;
+import com.groom.product.review.domain.entity.ReviewCategory;
+import com.groom.product.review.domain.entity.ReviewEntity;
+import com.groom.product.review.domain.entity.ReviewLikeEntity;
+import com.groom.product.review.domain.repository.ProductRatingRepository;
+import com.groom.product.review.domain.repository.ReviewLikeRepository;
+import com.groom.product.review.domain.repository.ReviewRepository;
+import com.groom.product.review.infrastructure.client.Classification.AiClient;
+import com.groom.product.review.presentation.dto.request.CreateReviewRequest;
+import com.groom.product.review.presentation.dto.request.UpdateReviewRequest;
+import com.groom.product.review.presentation.dto.response.ReviewResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,20 +28,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.groom.e_commerce.global.infrastructure.client.Classification.AiClient;
-import com.groom.e_commerce.review.application.event.ReviewCreatedEvent;
-import com.groom.e_commerce.review.application.validator.OrderReviewValidator;
-import com.groom.e_commerce.review.domain.entity.ProductRatingEntity;
-import com.groom.e_commerce.review.domain.entity.ReviewCategory;
-import com.groom.e_commerce.review.domain.entity.ReviewEntity;
-import com.groom.e_commerce.review.domain.entity.ReviewLikeEntity;
-import com.groom.e_commerce.review.domain.repository.ProductRatingRepository;
-import com.groom.e_commerce.review.domain.repository.ReviewLikeRepository;
-import com.groom.e_commerce.review.domain.repository.ReviewRepository;
-import com.groom.e_commerce.review.presentation.dto.request.CreateReviewRequest;
-import com.groom.e_commerce.review.presentation.dto.request.UpdateReviewRequest;
-import com.groom.e_commerce.review.presentation.dto.response.ReviewResponse;
-import com.groom.e_commerce.user.domain.entity.user.UserRole;
+
 import org.springframework.context.ApplicationEventPublisher;
 
 

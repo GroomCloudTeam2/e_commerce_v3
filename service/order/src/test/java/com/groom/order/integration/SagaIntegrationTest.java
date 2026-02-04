@@ -10,10 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -55,6 +52,7 @@ import com.groom.order.integration.helper.TestEventFactory;
  */
 @SpringBootTest
 @Testcontainers
+@Tag("integration")
 @ActiveProfiles("test")
 class SagaIntegrationTest {
 
