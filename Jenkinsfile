@@ -6,20 +6,16 @@ pipeline {
     agent any
 
     environment {
-        GRADLE_USER_HOME = "/var/jenkins_home/.gradle"
-
-        AWS_REGION     = "ap-northeast-2"
-        AWS_ACCOUNT_ID = "900808296075"
-        ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-
-        IMAGE_TAG = "${BUILD_NUMBER}-${GIT_COMMIT[0..7]}"
-
+        GRADLE_USER_HOME   = "/var/jenkins_home/.gradle"
+        AWS_REGION         = "ap-northeast-2"
+        AWS_ACCOUNT_ID     = "900808296075"
+        ECR_REGISTRY       = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        IMAGE_TAG          = "${BUILD_NUMBER}-${GIT_COMMIT[0..7]}"
         GITOPS_REPO_URL    = "https://github.com/GroomCloudTeam2/courm-helm.git"
         GITOPS_DIR         = "courm-helm"
         GITOPS_BRANCH      = "main"
         GITOPS_VALUES_BASE = "services"
-
-        SLACK_CHANNEL = "#jenkins-alerts"
+        SLACK_CHANNEL      = "#jenkins-alerts"
     }
 
     options {
@@ -29,11 +25,9 @@ pipeline {
     }
 
     stages {
-
         stage('CI') {
             when { branch 'main' }
             stages {
-
                 stage('Detect Changes') {
                     steps {
                         script {
@@ -43,18 +37,35 @@ pipeline {
                     }
                 }
 
-                stage('Gradle Build') {
+                stage('Gradle Test') {
                     when {
-                        expression {
-                            CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty()
-                        }
+                        expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
                     }
                     steps {
-                        sh """
-                          ./gradlew \
-                          ${CHANGED_SERVICES.collect { ":service:${it}:bootJar" }.join(' ')} \
-                          --no-daemon --parallel
-                        """
+                        script {
+                            // 변경된 서비스별로 :test와 :jacocoTestReport 실행
+                            def testTasks = CHANGED_SERVICES.collect { ":service:${it}:test :service:${it}:jacocoTestReport" }.join(' ')
+                            sh "./gradlew ${testTasks} --no-daemon --parallel"
+                        }
+                    }
+                    post {
+                        always {
+                            // 테스트 결과 junit report 저장
+                            junit '**/build/test-results/test/*.xml'
+                        }
+                    }
+                }
+
+                stage('Gradle Build') {
+                    when {
+                        expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                    }
+                    steps {
+                        script {
+                            def buildTasks = CHANGED_SERVICES.collect { ":service:${it}:bootJar" }.join(' ')
+                            // 앞에서 테스트를 완료했으므로 -x test로 제외하여 속도 향상
+                            sh "./gradlew ${buildTasks} --no-daemon --parallel -x test"
+                        }
                     }
                 }
             }
@@ -69,8 +80,8 @@ pipeline {
             }
             steps {
                 sh '''
-                  aws ecr get-login-password --region ${AWS_REGION} \
-                  | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                    aws ecr get-login-password --region ${AWS_REGION} \
+                    | docker login --username AWS --password-stdin ${ECR_REGISTRY}
                 '''
             }
         }
