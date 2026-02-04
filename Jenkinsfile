@@ -122,44 +122,41 @@ pipeline {
         }
 
         stage('Update GitOps Repo') {
-            when {
-                expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
-            }
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'github-token',
-                    usernameVariable: 'GIT_USER',
-                    passwordVariable: 'GIT_TOKEN'
-                )]) {
-                    script {
-                        def services = CHANGED_SERVICES.join(', ')
+                    when {
+                        expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                    }
+                    steps {
+                        withCredentials([usernamePassword(
+                            credentialsId: 'github-token',
+                            usernameVariable: 'GIT_USER',
+                            passwordVariable: 'GIT_TOKEN'
+                        )]) {
+                            sh """
+                                rm -rf ${GITOPS_DIR}
+                                git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/GroomCloudTeam2/courm-helm.git ${GITOPS_DIR}
+                                cd ${GITOPS_DIR}
+                                git checkout ${GITOPS_BRANCH}
+                            """
 
-                        sh """
-                            rm -rf ${GITOPS_DIR}
-                            git clone https://\${GIT_USER}:\${GIT_TOKEN}@github.com/GroomCloudTeam2/courm-helm.git ${GITOPS_DIR}
-                            cd ${GITOPS_DIR}
-                            git checkout ${GITOPS_BRANCH}
-                        """
+                            script {
+                                CHANGED_SERVICES.each { svc ->
+                                    sh """
+                                        cd ${GITOPS_DIR}
+                                        sed -i 's|tag:.*|tag: "${IMAGE_TAG}"|' ${GITOPS_VALUES_BASE}/${svc}-service/values.yaml
+                                    """
+                                }
+                            }
 
-                        CHANGED_SERVICES.each { svc ->
                             sh """
                                 cd ${GITOPS_DIR}
-                                sed -i 's|tag:.*|tag: "${IMAGE_TAG}"|' \
-                                ${GITOPS_VALUES_BASE}/${svc}-service/values.yaml
+                                git config user.email "hyunho3445@gmail.com"
+                                git config user.name "yyytgf123"
+                                git add .
+                                git commit -m "Update services [${CHANGED_SERVICES.join(', ')}] to ${IMAGE_TAG}" || echo "No changes"
+                                git push origin ${GITOPS_BRANCH}
                             """
                         }
-
-                        sh """
-                            cd ${GITOPS_DIR}
-                            git config user.email "hyunho3445@gmail.com"
-                            git config user.name "yyytgf123"
-                            git add .
-                            git commit -m "Update services [${services}] to ${IMAGE_TAG}" || echo "No changes"
-                            git push origin ${GITOPS_BRANCH}
-                        """
                     }
-                }
-            }
         }
     }
 
