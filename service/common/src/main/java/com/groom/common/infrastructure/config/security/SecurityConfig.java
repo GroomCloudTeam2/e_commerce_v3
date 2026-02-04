@@ -56,6 +56,7 @@ public class SecurityConfig {
 						.requestMatchers("/api/v2/products", "/api/v2/products/{productId}").permitAll()
 
 						// 내부 API (서비스 간 통신용)
+						.requestMatchers("/api/v1/internal/**").permitAll()
 						.requestMatchers("/api/v2/internal/**").permitAll()
 						.requestMatchers("/actuator/**","/internal/**").permitAll()
 
