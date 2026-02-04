@@ -25,9 +25,12 @@ pipeline {
     }
 
     stages {
+
         stage('CI') {
             when { branch 'main' }
+
             stages {
+
                 stage('Detect Changes') {
                     steps {
                         script {
@@ -43,14 +46,14 @@ pipeline {
                     }
                     steps {
                         script {
-                            // 변경된 서비스별로 :test와 :jacocoTestReport 실행
-                            def testTasks = CHANGED_SERVICES.collect { ":service:${it}:test :service:${it}:jacocoTestReport" }.join(' ')
+                            def testTasks = CHANGED_SERVICES
+                                .collect { ":service:${it}:test :service:${it}:jacocoTestReport" }
+                                .join(' ')
                             sh "./gradlew ${testTasks} --no-daemon --parallel"
                         }
                     }
                     post {
                         always {
-                            // 테스트 결과 junit report 저장
                             junit '**/build/test-results/test/*.xml'
                         }
                     }
@@ -62,14 +65,16 @@ pipeline {
                     }
                     steps {
                         script {
-                            def buildTasks = CHANGED_SERVICES.collect { ":service:${it}:bootJar" }.join(' ')
-                            // 앞에서 테스트를 완료했으므로 -x test로 제외하여 속도 향상
+                            def buildTasks = CHANGED_SERVICES
+                                .collect { ":service:${it}:bootJar" }
+                                .join(' ')
                             sh "./gradlew ${buildTasks} --no-daemon --parallel -x test"
                         }
                     }
                 }
-            }
-        }
+
+            } // CI 내부 stages 닫힘
+        } // CI stage 닫힘
 
         stage('ECR Login') {
             when {
@@ -109,14 +114,12 @@ pipeline {
                 expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
             }
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'github-token',
-                    usernameVariable: 'GIT_USER',
-                    passwordVariable: 'GIT_TOKEN'
-                )]) {
+                withCredentials([
+                    string(credentialsId: 'github-pat', variable: 'GIT_TOKEN')
+                ]) {
                     sh """
                         rm -rf ${GITOPS_DIR}
-                        git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/GroomCloudTeam2/courm-helm.git ${GITOPS_DIR}
+                        git clone https://x-access-token:${GIT_TOKEN}@github.com/GroomCloudTeam2/courm-helm.git ${GITOPS_DIR}
                         cd ${GITOPS_DIR}
                         git checkout ${GITOPS_BRANCH}
                     """
@@ -141,7 +144,8 @@ pipeline {
                 }
             }
         }
-    }
+
+    } // stages 닫힘
 
     post {
         success {
