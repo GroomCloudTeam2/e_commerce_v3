@@ -134,12 +134,12 @@ pipeline {
                     script {
                         def services = CHANGED_SERVICES.join(', ')
 
-                        sh '''
+                        sh """
                             rm -rf ${GITOPS_DIR}
-                            git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/GroomCloudTeam2/courm-helm.git ${GITOPS_DIR}
+                            git clone https://\${GIT_USER}:\${GIT_TOKEN}@github.com/GroomCloudTeam2/courm-helm.git ${GITOPS_DIR}
                             cd ${GITOPS_DIR}
                             git checkout ${GITOPS_BRANCH}
-                        '''
+                        """
 
                         CHANGED_SERVICES.each { svc ->
                             sh """
