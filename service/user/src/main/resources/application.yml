@@ -1,5 +1,7 @@
 server:
-  port: 8081
+  port: 8080
+
+# 12312312
 
 spring:
   application:
@@ -24,7 +26,8 @@ spring:
       port: 6379
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: kafka1:9092,kafka2:9092,kafka3:9092
+    #bootstrap-servers: 10.0.20.113:9092,10.0.20.89:9092,10.0.21.141:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
