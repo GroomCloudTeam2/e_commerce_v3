@@ -1,13 +1,13 @@
 server:
   port: 8080
 
-# 12312312312312
+# 12312312312312432
 
 spring:
   application:
     name: service-user
   datasource:
-    url: jdbc:postgresql://database-2.cluster-c9iosg68k3c4.ap-northeast-2.rds.amazonaws.com/user_db
+    url: jdbc:postgresql://localhost:5432/user_db
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
