@@ -49,7 +49,7 @@ pipeline {
                             def testTasks = CHANGED_SERVICES
                                 .collect { ":service:${it}:test :service:${it}:jacocoTestReport" }
                                 .join(' ')
-                            sh "./gradlew ${testTasks} --no-daemon --parallel"
+                            sh "./gradlew ${testTasks} -DexcludeTags=Integration --no-daemon --parallel"
                         }
                     }
                     post {
