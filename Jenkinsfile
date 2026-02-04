@@ -25,12 +25,9 @@ pipeline {
     }
 
     stages {
-
         stage('CI') {
             when { branch 'main' }
-
             stages {
-
                 stage('Detect Changes') {
                     steps {
                         script {
@@ -46,20 +43,14 @@ pipeline {
                     }
                     steps {
                         script {
-                            def testTasks = CHANGED_SERVICES.collect {
-                                ":service:${it}:test :service:${it}:jacocoTestReport"
-                            }.join(' ')
-
-                            sh """
-                                ./gradlew ${testTasks} \
-                                --no-daemon \
-                                --max-workers=2 \
-                                -DexcludeTags=integration
-                            """
+                            // 변경된 서비스별로 :test와 :jacocoTestReport 실행
+                            def testTasks = CHANGED_SERVICES.collect { ":service:${it}:test :service:${it}:jacocoTestReport" }.join(' ')
+                            sh "./gradlew ${testTasks} --no-daemon --parallel"
                         }
                     }
                     post {
                         always {
+                            // 테스트 결과 junit report 저장
                             junit '**/build/test-results/test/*.xml'
                         }
                     }
@@ -71,17 +62,9 @@ pipeline {
                     }
                     steps {
                         script {
-                            def buildTasks = CHANGED_SERVICES.collect {
-                                ":service:${it}:bootJar"
-                            }.join(' ')
-
-                            sh """
-                                ./gradlew ${buildTasks} \
-                                --no-daemon \
-                                --max-workers=2 \
-                                --parallel \
-                                -x test
-                            """
+                            def buildTasks = CHANGED_SERVICES.collect { ":service:${it}:bootJar" }.join(' ')
+                            // 앞에서 테스트를 완료했으므로 -x test로 제외하여 속도 향상
+                            sh "./gradlew ${buildTasks} --no-daemon --parallel -x test"
                         }
                     }
                 }
@@ -96,10 +79,10 @@ pipeline {
                 }
             }
             steps {
-                sh """
+                sh '''
                     aws ecr get-login-password --region ${AWS_REGION} \
                     | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                """
+                '''
             }
         }
 
@@ -122,70 +105,58 @@ pipeline {
         }
 
         stage('Update GitOps Repo') {
-                    when {
-                        expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
-                    }
-                    steps {
-                        withCredentials([usernamePassword(
-                            credentialsId: 'github-token',
-                            usernameVariable: 'GIT_USER',
-                            passwordVariable: 'GIT_TOKEN'
-                        )]) {
-                            sh """
-                                rm -rf ${GITOPS_DIR}
-                                git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/GroomCloudTeam2/courm-helm.git ${GITOPS_DIR}
-                                cd ${GITOPS_DIR}
-                                git checkout ${GITOPS_BRANCH}
-                            """
+            when {
+                expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+            }
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'github-token',
+                    usernameVariable: 'GIT_USER',
+                    passwordVariable: 'GIT_TOKEN'
+                )]) {
+                    sh """
+                        rm -rf ${GITOPS_DIR}
+                        git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/GroomCloudTeam2/courm-helm.git ${GITOPS_DIR}
+                        cd ${GITOPS_DIR}
+                        git checkout ${GITOPS_BRANCH}
+                    """
 
-                            script {
-                                CHANGED_SERVICES.each { svc ->
-                                    sh """
-                                        cd ${GITOPS_DIR}
-                                        sed -i 's|tag:.*|tag: "${IMAGE_TAG}"|' ${GITOPS_VALUES_BASE}/${svc}-service/values.yaml
-                                    """
-                                }
-                            }
-
+                    script {
+                        CHANGED_SERVICES.each { svc ->
                             sh """
                                 cd ${GITOPS_DIR}
-                                git config user.email "hyunho3445@gmail.com"
-                                git config user.name "yyytgf123"
-                                git add .
-                                git commit -m "Update services [${CHANGED_SERVICES.join(', ')}] to ${IMAGE_TAG}" || echo "No changes"
-                                git push origin ${GITOPS_BRANCH}
+                                sed -i 's|tag:.*|tag: "${IMAGE_TAG}"|' ${GITOPS_VALUES_BASE}/${svc}-service/values.yaml
                             """
                         }
                     }
+
+                    sh """
+                        cd ${GITOPS_DIR}
+                        git config user.email "hyunho3445@gmail.com"
+                        git config user.name "yyytgf123"
+                        git add .
+                        git commit -m "Update services [${CHANGED_SERVICES.join(', ')}] to ${IMAGE_TAG}" || echo "No changes"
+                        git push origin ${GITOPS_BRANCH}
+                    """
+                }
+            }
         }
     }
 
     post {
         success {
-            script {
-                try {
-                    slackNotify(
-                        status: 'SUCCESS',
-                        channel: SLACK_CHANNEL,
-                        services: CHANGED_SERVICES
-                    )
-                } catch (Exception e) {
-                    echo "Slack notification failed: ${e.message}"
-                }
-            }
+            slackNotify(
+                status: 'SUCCESS',
+                channel: SLACK_CHANNEL,
+                services: CHANGED_SERVICES
+            )
         }
         failure {
-            script {
-                try {
-                    slackNotify(
-                        status: 'FAILURE',
-                        channel: SLACK_CHANNEL,
-                        services: CHANGED_SERVICES
-                    )
-                } catch (Exception e) {
-                    echo "Slack notification failed: ${e.message}"
-                }
-            }
+            slackNotify(
+                status: 'FAILURE',
+                channel: SLACK_CHANNEL,
+                services: CHANGED_SERVICES
+            )
         }
         always {
             archiveArtifacts artifacts: 'trivy-reports/*.json', allowEmptyArchive: true
