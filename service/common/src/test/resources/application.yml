@@ -54,7 +54,7 @@ feign:
 # Service URLs for Feign Clients
 external:
   product-service:
-    url: http://localhost:8085
+    url: ${PRODUCT_SERVICE_URL:http://localhost:8085}
 
 logging:
   level:

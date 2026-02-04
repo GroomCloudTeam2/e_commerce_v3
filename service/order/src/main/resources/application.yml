@@ -6,9 +6,9 @@ spring:
     name: service-cart
   datasource:
     #url: jdbc:postgresql://localhost:5432/order_db
-    url: jdbc:postgresql://database-1.cluster-c9iosg68k3c4.ap-northeast-2.rds.amazonaws.com:5432/order_db
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ecommerce}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -20,11 +20,13 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   data:
     redis:
-      host: localhost
+      #host: localhost
+      host: local-redis
       port: 6379
       
   kafka:
-    bootstrap-servers: 10.0.20.113:9092,10.0.20.89:9092,10.0.21.141:9092
+    bootstrap-servers: kafka1:9092,kafka2:9092,kafka3:9092
+    #RDS bootstrap-servers: 10.0.20.113:9092,10.0.20.89:9092,10.0.21.141:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -59,9 +61,9 @@ feign:
 # Service URLs for Feign Clients
 external:
   user-service:
-    url: http://localhost:8081
+    url: ${USER_SERVICE_URL:http://user:8080}
   product-service:
-    url: http://localhost:8085
+    url: ${PRODUCT_SERVICE_URL:http://product:8080}
 
 logging:
   level:
