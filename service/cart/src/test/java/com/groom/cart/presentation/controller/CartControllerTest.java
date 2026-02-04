@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.util.List;
@@ -21,16 +22,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(
-        controllers = CartController.class,
-        excludeAutoConfiguration = SecurityAutoConfiguration.class
-)
+@WebMvcTest(controllers = CartController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class CartControllerTest {
 
     @Autowired
@@ -64,7 +64,7 @@ class CartControllerTest {
                 2
         );
 
-        mockMvc.perform(post("/api/v1/cart")
+        mockMvc.perform(post("/api/v2/cart")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
@@ -79,7 +79,7 @@ class CartControllerTest {
         when(cartService.getMyCart(userId))
                 .thenReturn(List.of());
 
-        mockMvc.perform(get("/api/v1/cart"))
+        mockMvc.perform(get("/api/v2/cart"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
 
@@ -90,7 +90,7 @@ class CartControllerTest {
     void updateQuantity_success() throws Exception {
         SecurityTestUtil.mockUser(userId);
 
-        mockMvc.perform(put("/api/v1/cart/items")
+        mockMvc.perform(put("/api/v2/cart/items")
                         .param("productId", productId.toString())
                         .param("variantId", variantId.toString())
                         .param("quantity", "3"))
@@ -103,11 +103,12 @@ class CartControllerTest {
     @Test
     void checkout_allItems_success() throws Exception {
         SecurityTestUtil.mockUser(userId);
-
         UUID orderId = UUID.randomUUID();
+
         when(cartService.checkout(userId)).thenReturn(orderId);
 
-        mockMvc.perform(post("/api/v1/cart/checkout"))
+        mockMvc.perform(post("/api/v2/cart/checkout"))
+                .andDo(print())
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.orderId").value(orderId.toString()));
 
@@ -126,11 +127,11 @@ class CartControllerTest {
         CartCheckoutRequest request = new CartCheckoutRequest();
         ReflectionTestUtils.setField(request, "selectedItems", items);
 
-        when(cartService.checkout(userId, items)).thenReturn(orderId);
-
-        mockMvc.perform(post("/api/v1/cart/checkout")
+        when(cartService.checkout(eq(userId), any())).thenReturn(orderId);
+        mockMvc.perform(post("/api/v2/cart/checkout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.orderId").value(orderId.toString()));
 
@@ -141,9 +142,10 @@ class CartControllerTest {
     void deleteItem_success() throws Exception {
         SecurityTestUtil.mockUser(userId);
 
-        mockMvc.perform(delete("/api/v1/cart/items")
+        mockMvc.perform(delete("/api/v2/cart/items")
                         .param("productId", productId.toString())
                         .param("variantId", variantId.toString()))
+                .andDo(print())
                 .andExpect(status().isNoContent());
 
         verify(cartService).deleteCartItem(userId, productId, variantId);
@@ -156,9 +158,10 @@ class CartControllerTest {
         List<CartService.CartItemDeleteRequest> items =
                 List.of(new CartService.CartItemDeleteRequest(productId, variantId));
 
-        mockMvc.perform(delete("/api/v1/cart/items/bulk")
+        mockMvc.perform(delete("/api/v2/cart/items/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(items)))
+                .andDo(print())
                 .andExpect(status().isNoContent());
 
         verify(cartService).removeCartItems(eq(userId), any());
