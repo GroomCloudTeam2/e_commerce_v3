@@ -7,6 +7,13 @@ import static org.mockito.Mockito.*;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.groom.common.presentation.advice.CustomException;
+import com.groom.common.presentation.advice.ErrorCode;
+import com.groom.product.review.domain.entity.ReviewEntity;
+import com.groom.product.review.domain.repository.ReviewRepository;
+import com.groom.product.review.infrastructure.feign.OrderClient;
+import com.groom.product.review.infrastructure.feign.dto.OrderReviewValidationRequest;
+import com.groom.product.review.infrastructure.feign.dto.OrderReviewValidationResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,13 +21,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.groom.e_commerce.global.presentation.advice.CustomException;
-import com.groom.e_commerce.global.presentation.advice.ErrorCode;
-import com.groom.e_commerce.review.domain.entity.ReviewEntity;
-import com.groom.e_commerce.review.domain.repository.ReviewRepository;
-import com.groom.e_commerce.review.infrastructure.feign.OrderClient;
-import com.groom.e_commerce.review.infrastructure.feign.dto.OrderReviewValidationRequest;
-import com.groom.e_commerce.review.infrastructure.feign.dto.OrderReviewValidationResponse;
 
 @ExtendWith(MockitoExtension.class)
 class OrderReviewValidatorTest {

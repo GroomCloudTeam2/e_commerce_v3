@@ -9,6 +9,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.groom.product.product.domain.entity.Product;
+import com.groom.product.product.domain.repository.ProductRepository;
+import com.groom.product.review.application.support.AiReviewPromptBuilder;
+import com.groom.product.review.domain.entity.ProductRatingEntity;
+import com.groom.product.review.domain.entity.ReviewEntity;
+import com.groom.product.review.domain.repository.ProductRatingRepository;
+import com.groom.product.review.domain.repository.ReviewRepository;
+import com.groom.product.review.infrastructure.client.OpenAi.OpenAiClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,15 +25,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.groom.e_commerce.global.infrastructure.client.OpenAi.OpenAiClient;
-import com.groom.e_commerce.product.domain.entity.Product;
-import com.groom.e_commerce.product.domain.repository.ProductRepository;
-import com.groom.e_commerce.review.application.support.AiReviewPromptBuilder;
-import com.groom.e_commerce.review.domain.entity.ProductRatingEntity;
-import com.groom.e_commerce.review.domain.entity.ReviewCategory;
-import com.groom.e_commerce.review.domain.entity.ReviewEntity;
-import com.groom.e_commerce.review.domain.repository.ProductRatingRepository;
-import com.groom.e_commerce.review.domain.repository.ReviewRepository;
+
 
 @ExtendWith(MockitoExtension.class)
 class ReviewAiSummaryServiceTest {

@@ -48,7 +48,25 @@ pipeline {
                             sh "./gradlew ${testTasks} --no-daemon --parallel"
                         }
                     }
-                    post {
+                    post {                stage('Gradle Test') {
+                                              when {
+                                                  expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                                              }
+                                              steps {
+                                                  script {
+                                                      // 변경된 서비스별로 :test와 :jacocoTestReport 실행
+                                                      def testTasks = CHANGED_SERVICES.collect { ":service:${it}:test :service:${it}:jacocoTestReport" }.join(' ')
+                                                      sh "./gradlew ${testTasks} --no-daemon --parallel --max-workers=2 -DexcludeTags=integration"
+                                                  }
+                                              }
+                                              post {
+                                                  always {
+                                                      // 테스트 결과 junit report 저장
+                                                      junit '**/build/test-results/test/*.xml'
+                                                  }
+                                              }
+                                          }
+
                         always {
                             // 테스트 결과 junit report 저장
                             junit '**/build/test-results/test/*.xml'

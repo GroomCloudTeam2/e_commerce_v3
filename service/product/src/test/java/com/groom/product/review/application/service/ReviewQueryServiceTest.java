@@ -9,6 +9,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.groom.product.review.domain.entity.ProductRatingEntity;
+import com.groom.product.review.domain.entity.ReviewEntity;
+import com.groom.product.review.domain.repository.ProductRatingRepository;
+import com.groom.product.review.domain.repository.ReviewRepository;
+import com.groom.product.review.infrastructure.redis.ReviewReadModel;
+import com.groom.product.review.infrastructure.redis.ReviewRedisRepository;
+import com.groom.product.review.presentation.dto.response.ProductReviewResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,13 +26,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
-import com.groom.e_commerce.review.domain.entity.ProductRatingEntity;
-import com.groom.e_commerce.review.domain.entity.ReviewEntity;
-import com.groom.e_commerce.review.domain.repository.ProductRatingRepository;
-import com.groom.e_commerce.review.domain.repository.ReviewRepository;
-import com.groom.e_commerce.review.infrastructure.redis.ReviewReadModel;
-import com.groom.e_commerce.review.infrastructure.redis.ReviewRedisRepository;
-import com.groom.e_commerce.review.presentation.dto.response.ProductReviewResponse;
+
 
 @ExtendWith(MockitoExtension.class)
 class ReviewQueryServiceTest {
