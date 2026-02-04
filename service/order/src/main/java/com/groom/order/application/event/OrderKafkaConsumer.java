@@ -39,23 +39,37 @@ public class OrderKafkaConsumer {
 	@KafkaListener(topics = "${event.kafka.topics.order:order-events}", groupId = "${spring.kafka.consumer.group-id}")
 	@Transactional
 	public void handle(EventEnvelope envelope, org.springframework.kafka.support.Acknowledgment ack) {
-		if (producer.equals(envelope.getProducer())) {
-			ack.acknowledge();
-			return; // skip self-produced events
-		}
-
-		EventType eventType = envelope.getEventType();
-		switch (eventType) {
-			case PAYMENT_COMPLETED -> handlePaymentCompleted(envelope);
-			case STOCK_DEDUCTED -> handleStockDeducted(envelope);
-			case PAYMENT_FAILED -> handlePaymentFailed(envelope);
-			case STOCK_DEDUCTION_FAILED -> handleStockDeductionFailed(envelope);
-			case REFUND_SUCCEEDED -> handleRefundSucceeded(envelope);
-			case REFUND_FAILED -> handleRefundFailed(envelope);
-			default -> {
+		try {
+			if (producer.equals(envelope.getProducer())) {
+				log.debug("[Order] Skipping self-produced event: {}", envelope.getEventType());
+				ack.acknowledge();
+				return; // skip self-produced events
 			}
+
+			log.info("[Order] Processing event: type={}, id={}, aggregateId={}",
+					envelope.getEventType(), envelope.getEventId(), envelope.getAggregateId());
+
+			EventType eventType = envelope.getEventType();
+			switch (eventType) {
+				case PAYMENT_COMPLETED -> handlePaymentCompleted(envelope);
+				case STOCK_DEDUCTED -> handleStockDeducted(envelope);
+				case PAYMENT_FAILED -> handlePaymentFailed(envelope);
+				case STOCK_DEDUCTION_FAILED -> handleStockDeductionFailed(envelope);
+				case REFUND_SUCCEEDED -> handleRefundSucceeded(envelope);
+				case REFUND_FAILED -> handleRefundFailed(envelope);
+				default -> log.debug("[Order] Unhandled event type: {}", eventType);
+			}
+
+			ack.acknowledge();
+			log.debug("[Order] Successfully processed and acknowledged event: {}", envelope.getEventType());
+		} catch (Exception e) {
+			log.error("[Order] Failed to process event: type={}, id={}, error={}",
+					envelope.getEventType(), envelope.getEventId(), e.getMessage(), e);
+			// Acknowledge even on failure to prevent infinite retry
+			// Failed events should be handled by dead letter queue or manual intervention
+			ack.acknowledge();
+			log.warn("[Order] Acknowledged failed event to prevent retry: {}", envelope.getEventId());
 		}
-		ack.acknowledge();
 	}
 
 	private void handlePaymentCompleted(EventEnvelope envelope) {

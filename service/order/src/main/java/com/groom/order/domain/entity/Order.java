@@ -127,11 +127,17 @@ public class Order extends BaseEntity {
 	}
 
 	/**
-	 * 5. 취소 처리
+	 * 5. 취소 처리 (환불 성공 시)
+	 * - PENDING, PAID, CONFIRMED 상태에서 취소 가능
+	 * - FAILED, CANCELLED, MANUAL_CHECK 상태에서는 불가
 	 */
 	public void cancel() {
-		if (this.status == OrderStatus.CONFIRMED) {
-			throw new IllegalStateException("이미 완료된 주문은 취소할 수 없습니다.");
+		if (this.status == OrderStatus.CANCELLED) {
+			// 이미 취소된 경우 - idempotency
+			return;
+		}
+		if (this.status == OrderStatus.FAILED || this.status == OrderStatus.MANUAL_CHECK) {
+			throw new IllegalStateException("실패 또는 수동 확인 상태인 주문은 취소할 수 없습니다. 현재: " + this.status);
 		}
 		this.status = OrderStatus.CANCELLED;
 	}
