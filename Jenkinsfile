@@ -121,8 +121,8 @@ pipeline {
 
                     sh """
                         cd ${GITOPS_DIR}
-                        git config user.email "jenkins@example.com"
-                        git config user.name "Jenkins"
+                        git config user.email "hyunho3445@gmail.com"
+                        git config user.name "yyytgf123"
                         git add .
                         git commit -m "Update services [${CHANGED_SERVICES.join(', ')}] to ${IMAGE_TAG}" || echo "No changes"
                         git push origin ${GITOPS_BRANCH}
