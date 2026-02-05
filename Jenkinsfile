@@ -3,10 +3,10 @@
 def CHANGED_SERVICES = []
 
 pipeline {
-    agent any
+    agent none
 
     environment {
-        GRADLE_USER_HOME   = "/var/jenkins_home/.gradle"
+        GRADLE_USER_HOME   = "/home/jenkins/.gradle"
         AWS_REGION         = "ap-northeast-2"
         AWS_ACCOUNT_ID     = "900808296075"
         ECR_REGISTRY       = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
@@ -26,10 +26,24 @@ pipeline {
 
     stages {
 
+        /* ================= CI ================= */
         stage('CI') {
             when { branch 'main' }
 
+            agent {
+                kubernetes {
+                    inheritFrom 'gradle-agent'
+                    defaultContainer 'gradle'
+                }
+            }
+
             stages {
+
+                stage('Checkout') {
+                    steps {
+                        checkout scm
+                    }
+                }
 
                 stage('Detect Changes') {
                     steps {
@@ -42,14 +56,14 @@ pipeline {
 
                 stage('Gradle Test') {
                     when {
-                        expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                        expression { CHANGED_SERVICES }
                     }
                     steps {
                         script {
-                            def testTasks = CHANGED_SERVICES
+                            def tasks = CHANGED_SERVICES
                                 .collect { ":service:${it}:test :service:${it}:jacocoTestReport" }
                                 .join(' ')
-                            sh "./gradlew ${testTasks} -DexcludeTags=Integration --no-daemon --parallel"
+                            sh "./gradlew ${tasks} -DexcludeTags=Integration --no-daemon --parallel"
                         }
                     }
                     post {
@@ -61,58 +75,61 @@ pipeline {
 
                 stage('Gradle Build') {
                     when {
-                        expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                        expression { CHANGED_SERVICES }
                     }
                     steps {
                         script {
-                            def buildTasks = CHANGED_SERVICES
+                            def tasks = CHANGED_SERVICES
                                 .collect { ":service:${it}:bootJar" }
                                 .join(' ')
-                            sh "./gradlew ${buildTasks} --no-daemon --parallel -x test"
+                            sh "./gradlew ${tasks} --no-daemon --parallel -x test"
                         }
                     }
                 }
-
-            } // CI 내부 stages 닫힘
-        } // CI stage 닫힘
-
-        stage('ECR Login') {
-            when {
-                allOf {
-                    branch 'main'
-                    expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
-                }
-            }
-            steps {
-                sh '''
-                    aws ecr get-login-password --region ${AWS_REGION} \
-                    | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                '''
             }
         }
 
+        /* ========== Docker Build & Push (Kaniko) ========== */
         stage('Docker Build & Push') {
             when {
                 allOf {
                     branch 'main'
-                    expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                    expression { CHANGED_SERVICES }
                 }
             }
+
+            agent {
+                kubernetes {
+                    inheritFrom 'kaniko-agent'
+                    defaultContainer 'kaniko'
+                }
+            }
+
             steps {
                 script {
                     parallel CHANGED_SERVICES.collectEntries { svc ->
                         [(svc): {
-                            buildDockerImage(svc, IMAGE_TAG)
+                            sh """
+                              /kaniko/executor \
+                                --context=\$(pwd) \
+                                --dockerfile=service/${svc}/Dockerfile \
+                                --destination=${ECR_REGISTRY}/${svc}:${IMAGE_TAG} \
+                                --destination=${ECR_REGISTRY}/${svc}:latest \
+                                --cache=true
+                            """
                         }]
                     }
                 }
             }
         }
 
+        /* ================= GitOps ================= */
         stage('Update GitOps Repo') {
             when {
-                expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                expression { CHANGED_SERVICES }
             }
+            agent any
+
             steps {
                 withCredentials([
                     string(credentialsId: 'github-pat', variable: 'GIT_TOKEN')
@@ -127,8 +144,8 @@ pipeline {
                     script {
                         CHANGED_SERVICES.each { svc ->
                             sh """
-                                cd ${GITOPS_DIR}
-                                sed -i 's|tag:.*|tag: "${IMAGE_TAG}"|' ${GITOPS_VALUES_BASE}/${svc}-service/values.yaml
+                              sed -i 's|tag:.*|tag: "${IMAGE_TAG}"|' \
+                              ${GITOPS_DIR}/${GITOPS_VALUES_BASE}/${svc}-service/values.yaml
                             """
                         }
                     }
@@ -138,14 +155,13 @@ pipeline {
                         git config user.email "hyunho3445@gmail.com"
                         git config user.name "yyytgf123"
                         git add .
-                        git commit -m "Update services [${CHANGED_SERVICES.join(', ')}] to ${IMAGE_TAG}" || echo "No changes"
+                        git commit -m "Update services [${CHANGED_SERVICES.join(', ')}] to ${IMAGE_TAG}" || true
                         git push origin ${GITOPS_BRANCH}
                     """
                 }
             }
         }
-
-    } // stages 닫힘
+    }
 
     post {
         success {
