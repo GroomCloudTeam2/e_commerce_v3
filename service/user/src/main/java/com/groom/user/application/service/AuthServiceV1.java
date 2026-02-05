@@ -235,7 +235,7 @@ public class AuthServiceV1 {
 
 	// ==================== 토큰 갱신 ====================
 
-	public ResTokenDtoV1 refreshToken(String refreshToken, String ㅋemail) {
+	public ResTokenDtoV1 refreshToken(String refreshToken, String email) {
 		try {
 			InitiateAuthRequest authRequest = InitiateAuthRequest.builder()
 				.authFlow(AuthFlowType.REFRESH_TOKEN_AUTH)
