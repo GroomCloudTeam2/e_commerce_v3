@@ -28,7 +28,7 @@ pipeline {
 
         /* ================= CI ================= */
         stage('CI') {
-            when { branch 'main' }
+            when { branch 'agent' }
 
             agent {
                 kubernetes {
@@ -93,7 +93,7 @@ pipeline {
         stage('Docker Build & Push') {
             when {
                 allOf {
-                    branch 'main'
+                    branch 'agent'
                     expression { CHANGED_SERVICES }
                 }
             }
@@ -132,7 +132,7 @@ pipeline {
 
             steps {
                 withCredentials([
-                    string(credentialsId: 'github-pat', variable: 'GIT_TOKEN')
+                    string(credentialsId: 'github-token', variable: 'GIT_TOKEN')
                 ]) {
                     sh """
                         rm -rf ${GITOPS_DIR}
