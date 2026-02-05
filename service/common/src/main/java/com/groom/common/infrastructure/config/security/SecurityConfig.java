@@ -1,5 +1,6 @@
 package com.groom.common.infrastructure.config.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +12,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -21,6 +24,9 @@ import lombok.RequiredArgsConstructor;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+
+	@Value("${aws.cognito.jwk-set-uri}")
+	private String jwkSetUri;
 
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -43,11 +49,19 @@ public class SecurityConfig {
 						// .csrf(csrf -> csrf.disable()) // 테스트를 위해 CSRF 비활성화
 						// .authorizeHttpRequests(auth -> auth
 						// .requestMatchers("/test/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-						// // ✅ 테스트 경로 허용!
+
 						// .anyRequest().authenticated())
 						// .authorizeHttpRequests(auth -> auth
 						// 인증/회원가입
 						.requestMatchers("/api/v2/auth/signup", "/api/v2/auth/login").permitAll()
+
+						// testtest
+						.requestMatchers(
+							"/api/v2/auth/signup",
+							"/api/v2/auth/login",
+							"/api/v2/auth/confirm",       // ← 이거 있는지 확인
+							"/api/v2/auth/resend-code",
+							"/api/v2/auth/refresh").permitAll()
 
 						// 결제 관련 엔드포인트 (ready/success/fail/confirm 등 포함)
 						.requestMatchers("/api/v2/payments/**").permitAll()
@@ -75,6 +89,11 @@ public class SecurityConfig {
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
+	}
+
+	@Bean
+	public JwtDecoder jwtDecoder() {
+		return NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
 	}
 
 	@Bean
