@@ -2,19 +2,25 @@
 
 def CHANGED_SERVICES = []
 
+// ✅ 서비스별 ECR repo명 규칙 (필요하면 여기만 수정)
+// 예) goorm-user, goorm-cart ...
+def repoFor = { String svc ->
+    return "${env.ECR_REGISTRY}/goorm-${svc}"
+}
+
 pipeline {
-    agent any
+    agent none
 
     environment {
-        GRADLE_USER_HOME   = "/var/jenkins_home/.gradle"
         AWS_REGION         = "ap-northeast-2"
         AWS_ACCOUNT_ID     = "900808296075"
         ECR_REGISTRY       = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-        IMAGE_TAG          = "${BUILD_NUMBER}-${GIT_COMMIT[0..7]}"
+
         GITOPS_REPO_URL    = "https://github.com/GroomCloudTeam2/courm-helm.git"
         GITOPS_DIR         = "courm-helm"
-        GITOPS_BRANCH      = "main"
+        GITOPS_BRANCH      = "jib_test"
         GITOPS_VALUES_BASE = "services"
+
         SLACK_CHANNEL      = "#jenkins-alerts"
     }
 
@@ -26,83 +32,104 @@ pipeline {
 
     stages {
 
-        stage('CI') {
-            when { branch 'main' }
-
-            stages {
-
-                stage('Detect Changes') {
-                    steps {
-                        script {
-                            CHANGED_SERVICES = getChangedServices()
-                            echo "Changed services: ${CHANGED_SERVICES}"
-                        }
-                    }
-                }
-
-                stage('Gradle Test') {
-                    when {
-                        expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
-                    }
-                    steps {
-                        script {
-                            def testTasks = CHANGED_SERVICES
-                                .collect { ":service:${it}:test :service:${it}:jacocoTestReport" }
-                                .join(' ')
-                            sh "./gradlew ${testTasks} -DexcludeTags=Integration --no-daemon --parallel"
-                        }
-                    }
-                    post {
-                        always {
-                            junit '**/build/test-results/test/*.xml'
-                        }
-                    }
-                }
-
-                stage('Gradle Build') {
-                    when {
-                        expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
-                    }
-                    steps {
-                        script {
-                            def buildTasks = CHANGED_SERVICES
-                                .collect { ":service:${it}:bootJar" }
-                                .join(' ')
-                            sh "./gradlew ${buildTasks} --no-daemon --parallel -x test"
-                        }
-                    }
-                }
-
-            } // CI 내부 stages 닫힘
-        } // CI stage 닫힘
-
-        stage('ECR Login') {
-            when {
-                allOf {
-                    branch 'main'
-                    expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
-                }
-            }
-            steps {
-                sh '''
-                    aws ecr get-login-password --region ${AWS_REGION} \
-                    | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                '''
-            }
-        }
-
-        stage('Docker Build & Push') {
-            when {
-                allOf {
-                    branch 'main'
-                    expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+        stage('Init') {
+            agent {
+                kubernetes {
+                    inheritFrom 'gradle-agent'
+                    defaultContainer 'gradle'
                 }
             }
             steps {
                 script {
+                    // ✅ pod 기반 dynamic agent에서는 워크스페이스 캐시가 안전
+                    env.GRADLE_USER_HOME = "${env.WORKSPACE}/.gradle"
+
+                    // ✅ GIT_COMMIT이 비어도 터지지 않게
+                    def shortSha = (env.GIT_COMMIT ?: "unknown").take(8)
+                    env.IMAGE_TAG = "${env.BUILD_NUMBER}-${shortSha}"
+
+                    echo "GRADLE_USER_HOME=${env.GRADLE_USER_HOME}"
+                    echo "IMAGE_TAG=${env.IMAGE_TAG}"
+                }
+            }
+        }
+
+        stage('Detect Changes') {
+            agent {
+                kubernetes {
+                    inheritFrom 'gradle-agent'
+                    defaultContainer 'gradle'
+                }
+            }
+            steps {
+                script {
+                    CHANGED_SERVICES = getChangedServices()
+                    echo "Changed services: ${CHANGED_SERVICES}"
+
+                    if (!CHANGED_SERVICES || CHANGED_SERVICES.isEmpty()) {
+                        echo "No changed services. Pipeline will skip build/push/update stages."
+                    }
+                }
+            }
+        }
+
+        stage('Gradle Test') {
+            when { expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() } }
+            agent {
+                kubernetes {
+                    inheritFrom 'gradle-agent'
+                    defaultContainer 'gradle'
+                }
+            }
+            steps {
+                script {
+                    def testTasks = CHANGED_SERVICES
+                        .collect { ":service:${it}:test :service:${it}:jacocoTestReport" }
+                        .join(' ')
+                    sh "./gradlew ${testTasks} -DexcludeTags=Integration --no-daemon --parallel"
+                }
+            }
+            post {
+                always {
+                    junit '**/build/test-results/test/*.xml'
+                }
+            }
+        }
+
+        // ✅ bootJar 단계 제거 (Jib와 중복)
+        stage('Jib Build & Push') {
+            when {
+                allOf {
+                    branch 'main'
+                    expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                }
+            }
+            agent {
+                kubernetes {
+                    inheritFrom 'gradle-agent'
+                    defaultContainer 'gradle'
+                }
+            }
+            steps {
+                script {
+                    // (선택) AWS 권한 확인용 - 문제 생길 때만 켜도 됨
+                    sh "aws sts get-caller-identity || true"
+
                     parallel CHANGED_SERVICES.collectEntries { svc ->
                         [(svc): {
-                            buildDockerImage(svc, IMAGE_TAG)
+                            def image = "${repoFor(svc)}:${env.IMAGE_TAG}"
+                            echo "Jib push -> ${image}"
+
+                            sh """
+                                set -e
+                                set +x
+                                ECR_PW=\$(aws ecr get-login-password --region ${AWS_REGION})
+
+                                ./gradlew :service:${svc}:jib --no-daemon \\
+                                  -Djib.to.image=${image} \\
+                                  -Djib.to.auth.username=AWS \\
+                                  -Djib.to.auth.password=\$ECR_PW
+                            """
                         }]
                     }
                 }
@@ -111,13 +138,23 @@ pipeline {
 
         stage('Update GitOps Repo') {
             when {
-                expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                allOf {
+                    branch 'main'
+                    expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                }
+            }
+            agent {
+                kubernetes {
+                    inheritFrom 'gradle-agent'
+                    defaultContainer 'gradle'
+                }
             }
             steps {
                 withCredentials([
                     string(credentialsId: 'github-pat', variable: 'GIT_TOKEN')
                 ]) {
                     sh """
+                        set -e
                         rm -rf ${GITOPS_DIR}
                         git clone https://x-access-token:${GIT_TOKEN}@github.com/GroomCloudTeam2/courm-helm.git ${GITOPS_DIR}
                         cd ${GITOPS_DIR}
@@ -127,6 +164,7 @@ pipeline {
                     script {
                         CHANGED_SERVICES.each { svc ->
                             sh """
+                                set -e
                                 cd ${GITOPS_DIR}
                                 sed -i 's|tag:.*|tag: "${IMAGE_TAG}"|' ${GITOPS_VALUES_BASE}/${svc}-service/values.yaml
                             """
@@ -134,6 +172,7 @@ pipeline {
                     }
 
                     sh """
+                        set -e
                         cd ${GITOPS_DIR}
                         git config user.email "hyunho3445@gmail.com"
                         git config user.name "yyytgf123"
@@ -144,23 +183,14 @@ pipeline {
                 }
             }
         }
-
-    } // stages 닫힘
+    }
 
     post {
         success {
-            slackNotify(
-                status: 'SUCCESS',
-                channel: SLACK_CHANNEL,
-                services: CHANGED_SERVICES
-            )
+            slackNotify(status: 'SUCCESS', channel: SLACK_CHANNEL, services: CHANGED_SERVICES)
         }
         failure {
-            slackNotify(
-                status: 'FAILURE',
-                channel: SLACK_CHANNEL,
-                services: CHANGED_SERVICES
-            )
+            slackNotify(status: 'FAILURE', channel: SLACK_CHANNEL, services: CHANGED_SERVICES)
         }
         always {
             archiveArtifacts artifacts: 'trivy-reports/*.json', allowEmptyArchive: true
