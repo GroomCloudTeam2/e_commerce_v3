@@ -86,7 +86,7 @@ pipeline {
             steps {
                 runServiceTests(
                     services: CHANGED_SERVICES,
-                    excludeTags: 'Integration','container'
+                    excludeTags: 'Integration,container'
                 )
             }
             post {
