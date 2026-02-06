@@ -17,8 +17,7 @@ pipeline {
         GITOPS_VALUES_BASE = "services"
         SLACK_CHANNEL     = "#jenkins-alerts"
 
-        GRADLE_USER_HOME  = "${env.WORKSPACE}/.gradle"
-       //GRADLE_USER_HOME = "/home/jenkins/.gradle"
+        GRADLE_USER_HOME = "/home/jenkins/.gradle"
 
     }
 
