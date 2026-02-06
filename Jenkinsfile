@@ -32,20 +32,6 @@ pipeline {
 
     stages {
 
-        stage('ECR Login') {
-            when { branch 'agent' }
-            steps {
-                script {
-                    env.ECR_PASSWORD = sh(
-                        script: "aws ecr get-login-password --region ${AWS_REGION}",
-                        returnStdout: true
-                    ).trim()
-
-                    echo "ECR login token acquired"
-                }
-            }
-        }
-
         stage('Prepare') {
             steps {
                 script {
