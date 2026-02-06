@@ -11,7 +11,7 @@ pipeline {
         ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
         GITOPS_REPO_URL    = "https://github.com/GroomCloudTeam2/courm-helm.git"
-        GITOPS_BRANCH      = "main"
+        GITOPS_BRANCH      = "agent"
         GITOPS_VALUES_BASE = "services"
 
         SLACK_CHANNEL  = "#jenkins-alerts"
@@ -40,7 +40,6 @@ pipeline {
                     // pod 기반 agent → workspace 캐시 안전
                     env.GRADLE_USER_HOME = "${env.WORKSPACE}/.gradle"
 
-                    // Shared-lib 이미지 태그 전략
                     env.IMAGE_TAG = generateImageTag()
 
                     echo "GRADLE_USER_HOME=${env.GRADLE_USER_HOME}"
@@ -103,7 +102,7 @@ pipeline {
         stage('Jib Build & Push') {
             when {
                 allOf {
-                    branch 'main'
+                    branch 'agent'
                     expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
                 }
             }
@@ -129,7 +128,7 @@ pipeline {
         stage('Update GitOps Repo') {
             when {
                 allOf {
-                    branch 'main'
+                    branch 'agent'
                     expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
                 }
             }
