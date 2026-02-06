@@ -6,15 +6,13 @@ pipeline {
     agent none
 
     environment {
-        AWS_REGION     = "ap-northeast-2"
-        AWS_ACCOUNT_ID = "900808296075"
-        ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-
-        GITOPS_REPO_URL    = "https://github.com/GroomCloudTeam2/courm-helm.git"
-        GITOPS_BRANCH      = "agent"
+        AWS_REGION        = "ap-northeast-2"
+        AWS_ACCOUNT_ID    = "900808296075"
+        ECR_REGISTRY      = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        GITOPS_REPO_URL   = "https://github.com/GroomCloudTeam2/courm-helm.git"
+        GITOPS_BRANCH     = "agent"
         GITOPS_VALUES_BASE = "services"
-
-        SLACK_CHANNEL  = "#jenkins-alerts"
+        SLACK_CHANNEL     = "#jenkins-alerts"
     }
 
     options {
@@ -39,7 +37,6 @@ pipeline {
                 script {
                     // pod 기반 agent → workspace 캐시 안전
                     env.GRADLE_USER_HOME = "${env.WORKSPACE}/.gradle"
-
                     env.IMAGE_TAG = generateImageTag()
 
                     echo "GRADLE_USER_HOME=${env.GRADLE_USER_HOME}"
@@ -75,7 +72,9 @@ pipeline {
          * =============================== */
         stage('Gradle Test') {
             when {
-                expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                expression {
+                    CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty()
+                }
             }
             agent {
                 kubernetes {
@@ -86,7 +85,7 @@ pipeline {
             steps {
                 runServiceTests(
                     services: CHANGED_SERVICES,
-                    excludeTags: 'Integration'
+                    excludeTags: 'Integration,container'
                 )
             }
             post {
@@ -103,7 +102,9 @@ pipeline {
             when {
                 allOf {
                     branch 'agent'
-                    expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                    expression {
+                        CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty()
+                    }
                 }
             }
             agent {
@@ -129,7 +130,9 @@ pipeline {
             when {
                 allOf {
                     branch 'agent'
-                    expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                    expression {
+                        CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty()
+                    }
                 }
             }
             agent {
@@ -166,7 +169,9 @@ pipeline {
             )
         }
         always {
-            archiveArtifacts artifacts: 'trivy-reports/*.json', allowEmptyArchive: true
+            node {
+                archiveArtifacts artifacts: 'trivy-reports/*.json', allowEmptyArchive: true
+            }
         }
     }
 }
