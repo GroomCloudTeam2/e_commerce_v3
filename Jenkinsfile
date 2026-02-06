@@ -148,26 +148,26 @@ pipeline {
         }
     }
 
-    post {
-        success {
-            slackNotify(
-                status: 'SUCCESS',
-                channel: SLACK_CHANNEL,
-                services: CHANGED_SERVICES
-            )
-        }
-        failure {
-            slackNotify(
-                status: 'FAILURE',
-                channel: SLACK_CHANNEL,
-                services: CHANGED_SERVICES
-            )
-        }
-        always {
-            node('any') {
-                archiveArtifacts artifacts: 'trivy-reports/*.json',
-                                 allowEmptyArchive: true
-            }
-        }
-    }
+//     post {
+//         success {
+//             slackNotify(
+//                 status: 'SUCCESS',
+//                 channel: SLACK_CHANNEL,
+//                 services: CHANGED_SERVICES
+//             )
+//         }
+//         failure {
+//             slackNotify(
+//                 status: 'FAILURE',
+//                 channel: SLACK_CHANNEL,
+//                 services: CHANGED_SERVICES
+//             )
+//         }
+//         always {
+//             node('any') {
+//                 archiveArtifacts artifacts: 'trivy-reports/*.json',
+//                                  allowEmptyArchive: true
+//             }
+//         }
+//     }
 }
