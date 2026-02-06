@@ -14,10 +14,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -37,6 +34,7 @@ import com.groom.common.outbox.OutboxStatus;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("OrderOutboxPublisher 테스트")
+@Tag("Integration")
 class OrderOutboxPublisherTest {
 
     @Mock
