@@ -56,11 +56,11 @@ pipeline {
                             excludeTags: 'Integration'
                         )
                     }
-                    post {
-                        always {
-                            junit '**/build/test-results/test/*.xml'
-                        }
-                    }
+//                     post {
+//                         always {
+//                             junit '**/build/test-results/test/*.xml'
+//                         }
+//                     }
                 }
 
                 stage('Build & Push') {
