@@ -20,29 +20,38 @@ subprojects {
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'jacoco'
 
+    // 서비스 모듈들에만 Jib 설정 적용
     if (project.path.startsWith(":service:")) {
         apply plugin: "com.google.cloud.tools.jib"
 
-        // [추가] Jib의 ECR 인증 설정
+        // [방법 1] jibExtensions 구성을 명시적으로 선언하여 인식 오류 방지
+        configurations {
+            jibExtensions
+        }
+
+        dependencies {
+            // CLI 없이 자바 라이브러리만으로 ECR IRSA 인증을 처리하는 확장팩
+            jibExtensions 'com.google.cloud.tools:jib-amazon-ecr-helper:0.1.0'
+        }
+
         jib {
             to {
-                // 이 설정이 있으면 Jib이 시스템에서 'docker-credential-ecr-login'을 찾거나
-                // 연관된 자바 라이브러리를 통해 AWS IRSA 권한을 자동으로 사용합니다.
+                // 상단 jibExtensions 라이브러리를 통해 AWS 인증 토큰을 자동으로 가져옴
                 credHelper = 'ecr-login'
             }
             container {
-                // 가급적이면 타임존 설정도 넣어주는 것이 좋습니다. (선택사항)
                 jvmFlags = ['-Duser.timezone=Asia/Seoul']
             }
         }
     }
+
     java {
         toolchain {
             languageVersion = JavaLanguageVersion.of(17)
         }
     }
 
-    // [중요!] 모든 서브 프로젝트의 bootJar를 기본적으로 비활성화
+    // 모든 서브 프로젝트의 bootJar를 기본적으로 비활성화
     bootJar {
         enabled = false
     }
@@ -82,7 +91,6 @@ subprojects {
         }
     }
 
-
     jacocoTestReport {
         dependsOn test
         reports {
@@ -95,7 +103,7 @@ subprojects {
     compileTestJava.options.encoding = 'UTF-8'
 }
 
-// 이 리스트에 실행 가능한 BootJAR 생성
+// 실행 가능한 BootJAR 생성 프로젝트 리스트
 def bootableProjects = [
         project(':service:user'),
         project(':service:cart'),
@@ -112,7 +120,6 @@ configure(bootableProjects) {
         enabled = false
     }
     dependencies {
-        // [이동] 실제 서비스들만 common과 Swagger가 필요합니다.
         implementation project(':service:common')
         implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.3'
     }
