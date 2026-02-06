@@ -52,7 +52,7 @@ import com.groom.order.integration.helper.TestEventFactory;
  */
 @SpringBootTest
 @Testcontainers
-@Tag("integration")
+@Tag("Integration")
 @ActiveProfiles("test")
 class SagaIntegrationTest {
 
