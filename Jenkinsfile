@@ -1,5 +1,5 @@
 @Library('jenkins-shared-lib@k8s') _
-
+def CHANGED_SERVICES = []
 pipeline {
     agent {
         kubernetes {
@@ -17,8 +17,9 @@ pipeline {
         GITOPS_VALUES_BASE = "services"
         SLACK_CHANNEL     = "#jenkins-alerts"
 
-        // Gradle 캐시 경로를 환경 변수로 고정
         GRADLE_USER_HOME  = "${env.WORKSPACE}/.gradle"
+       //GRADLE_USER_HOME = "/home/jenkins/.gradle"
+
     }
 
     options {
@@ -30,6 +31,21 @@ pipeline {
     }
 
     stages {
+
+        stage('ECR Login') {
+            when { branch 'agent' }
+            steps {
+                script {
+                    env.ECR_PASSWORD = sh(
+                        script: "aws ecr get-login-password --region ${AWS_REGION}",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "ECR login token acquired"
+                }
+            }
+        }
+
         stage('Prepare') {
             steps {
                 script {
