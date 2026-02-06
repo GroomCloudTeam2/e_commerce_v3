@@ -37,9 +37,7 @@ pipeline {
             }
             steps {
                 script {
-                    // pod 기반 agent → workspace 캐시 안전
                     env.GRADLE_USER_HOME = "${env.WORKSPACE}/.gradle"
-
                     env.IMAGE_TAG = generateImageTag()
 
                     echo "GRADLE_USER_HOME=${env.GRADLE_USER_HOME}"
@@ -166,7 +164,7 @@ pipeline {
             )
         }
         always {
-            node {
+            node('any') {
                 archiveArtifacts artifacts: 'trivy-reports/*.json',
                                  allowEmptyArchive: true
             }
