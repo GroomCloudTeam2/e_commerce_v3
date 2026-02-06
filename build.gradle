@@ -22,8 +22,20 @@ subprojects {
 
     if (project.path.startsWith(":service:")) {
         apply plugin: "com.google.cloud.tools.jib"
-    }
 
+        // [추가] Jib의 ECR 인증 설정
+        jib {
+            to {
+                // 이 설정이 있으면 Jib이 시스템에서 'docker-credential-ecr-login'을 찾거나
+                // 연관된 자바 라이브러리를 통해 AWS IRSA 권한을 자동으로 사용합니다.
+                credHelper = 'ecr-login'
+            }
+            container {
+                // 가급적이면 타임존 설정도 넣어주는 것이 좋습니다. (선택사항)
+                jvmFlags = ['-Duser.timezone=Asia/Seoul']
+            }
+        }
+    }
     java {
         toolchain {
             languageVersion = JavaLanguageVersion.of(17)
