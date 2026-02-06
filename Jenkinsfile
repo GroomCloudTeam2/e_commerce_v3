@@ -37,7 +37,9 @@ pipeline {
             }
             steps {
                 script {
+                    // pod 기반 agent → workspace 캐시 안전
                     env.GRADLE_USER_HOME = "${env.WORKSPACE}/.gradle"
+
                     env.IMAGE_TAG = generateImageTag()
 
                     echo "GRADLE_USER_HOME=${env.GRADLE_USER_HOME}"
@@ -84,7 +86,7 @@ pipeline {
             steps {
                 runServiceTests(
                     services: CHANGED_SERVICES,
-                    excludeTags: 'Integration,container'
+                    excludeTags: 'Integration'
                 )
             }
             post {
@@ -148,26 +150,23 @@ pipeline {
         }
     }
 
-//     post {
-//         success {
-//             slackNotify(
-//                 status: 'SUCCESS',
-//                 channel: SLACK_CHANNEL,
-//                 services: CHANGED_SERVICES
-//             )
-//         }
-//         failure {
-//             slackNotify(
-//                 status: 'FAILURE',
-//                 channel: SLACK_CHANNEL,
-//                 services: CHANGED_SERVICES
-//             )
-//         }
-//         always {
-//             node('any') {
-//                 archiveArtifacts artifacts: 'trivy-reports/*.json',
-//                                  allowEmptyArchive: true
-//             }
-//         }
-//     }
+    post {
+        success {
+            slackNotify(
+                status: 'SUCCESS',
+                channel: SLACK_CHANNEL,
+                services: CHANGED_SERVICES
+            )
+        }
+        failure {
+            slackNotify(
+                status: 'FAILURE',
+                channel: SLACK_CHANNEL,
+                services: CHANGED_SERVICES
+            )
+        }
+        always {
+            archiveArtifacts artifacts: 'trivy-reports/*.json', allowEmptyArchive: true
+        }
+    }
 }
