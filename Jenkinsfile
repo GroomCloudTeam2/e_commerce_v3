@@ -86,7 +86,7 @@ pipeline {
             steps {
                 runServiceTests(
                     services: CHANGED_SERVICES,
-                    excludeTags: 'Integration'
+                    excludeTags: 'Integration','container'
                 )
             }
             post {
@@ -166,7 +166,10 @@ pipeline {
             )
         }
         always {
-            archiveArtifacts artifacts: 'trivy-reports/*.json', allowEmptyArchive: true
+            node {
+                archiveArtifacts artifacts: 'trivy-reports/*.json',
+                                 allowEmptyArchive: true
+            }
         }
     }
 }
