@@ -1,180 +1,110 @@
 @Library('jenkins-shared-lib@k8s') _
 
-def CHANGED_SERVICES = []
-
 pipeline {
-    agent none
+    agent {
+        kubernetes {
+            inheritFrom 'gradle-agent'
+            defaultContainer 'gradle'
+        }
+    }
 
     environment {
         AWS_REGION        = "ap-northeast-2"
         AWS_ACCOUNT_ID    = "900808296075"
         ECR_REGISTRY      = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-
         GITOPS_REPO_URL   = "https://github.com/GroomCloudTeam2/courm-helm.git"
-        GITOPS_BRANCH    = "agent"
+        GITOPS_BRANCH     = "agent"
         GITOPS_VALUES_BASE = "services"
-
         SLACK_CHANNEL     = "#jenkins-alerts"
+
+        // Gradle 캐시 경로를 환경 변수로 고정
+        GRADLE_USER_HOME  = "${env.WORKSPACE}/.gradle"
     }
 
     options {
         timeout(time: 30, unit: 'MINUTES')
         timestamps()
         buildDiscarder(logRotator(numToKeepStr: '20'))
+        // 동시 빌드가 꼬이지 않도록 설정
+        disableConcurrentBuilds()
     }
 
     stages {
-
-        /* ===============================
-         * Init
-         * =============================== */
-        stage('Init') {
-            agent {
-                kubernetes {
-                    inheritFrom 'gradle-agent'
-                    defaultContainer 'gradle'
-                }
-            }
+        stage('Prepare') {
             steps {
                 script {
-                    // pod 기반 agent → workspace 캐시 안전
-                    env.GRADLE_USER_HOME = "${env.WORKSPACE}/.gradle"
                     env.IMAGE_TAG = generateImageTag()
-
-                    echo "GRADLE_USER_HOME=${env.GRADLE_USER_HOME}"
-                    echo "IMAGE_TAG=${env.IMAGE_TAG}"
-                }
-            }
-        }
-
-        /* ===============================
-         * Detect Changes
-         * =============================== */
-        stage('Detect Changes') {
-            agent {
-                kubernetes {
-                    inheritFrom 'gradle-agent'
-                    defaultContainer 'gradle'
-                }
-            }
-            steps {
-                script {
                     CHANGED_SERVICES = getChangedServices()
-                    echo "Changed services: ${CHANGED_SERVICES}"
 
-                    if (!CHANGED_SERVICES || CHANGED_SERVICES.isEmpty()) {
-                        echo "No changed services. Pipeline will skip build & deploy."
-                    }
+                    echo "IMAGE_TAG: ${env.IMAGE_TAG}"
+                    echo "Changed Services: ${CHANGED_SERVICES}"
                 }
             }
         }
 
-        /* ===============================
-         * Gradle Test
-         * =============================== */
-        stage('Gradle Test') {
+        // 실제 작업이 있을 때만 실행되는 블록
+        stage('CI/CD Process') {
             when {
-                expression {
-                    CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty()
-                }
+                expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
             }
-            agent {
-                kubernetes {
-                    inheritFrom 'gradle-agent'
-                    defaultContainer 'gradle'
-                }
-            }
-            steps {
-                runServiceTests(
-                    services: CHANGED_SERVICES,
-                    excludeTags: 'Integration'
-                )
-            }
-            post {
-                always {
-                    junit '**/build/test-results/test/*.xml'
-                }
-            }
-        }
-
-        /* ===============================
-         * Jib Build & Push
-         * =============================== */
-        stage('Jib Build & Push') {
-            when {
-                allOf {
-                    branch 'agent'
-                    expression {
-                        CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty()
+            stages {
+                stage('Gradle Test') {
+                    steps {
+                        runServiceTests(
+                            services: CHANGED_SERVICES,
+                            excludeTags: 'Integration'
+                        )
+                    }
+                    post {
+                        always {
+                            junit '**/build/test-results/test/*.xml'
+                        }
                     }
                 }
-            }
-            agent {
-                kubernetes {
-                    inheritFrom 'gradle-agent'
-                    defaultContainer 'gradle'
-                }
-            }
-            steps {
-                jibBuildAndPush(
-                    services: CHANGED_SERVICES,
-                    imageTag: env.IMAGE_TAG,
-                    ecrRegistry: env.ECR_REGISTRY,
-                    awsRegion: env.AWS_REGION
-                )
-            }
-        }
 
-        /* ===============================
-         * Update GitOps Repo (Argo CD Trigger)
-         * =============================== */
-        stage('Update GitOps Repo') {
-            when {
-                allOf {
-                    branch 'agent'
-                    expression {
-                        CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty()
+                stage('Build & Push') {
+                    when { branch 'agent' }
+                    steps {
+                        jibBuildAndPush(
+                            services: CHANGED_SERVICES,
+                            imageTag: env.IMAGE_TAG,
+                            ecrRegistry: env.ECR_REGISTRY,
+                            awsRegion: env.AWS_REGION
+                        )
                     }
                 }
-            }
-            agent {
-                kubernetes {
-                    inheritFrom 'gradle-agent'
-                    defaultContainer 'gradle'
+
+                stage('Update GitOps') {
+                    when { branch 'agent' }
+                    steps {
+                        updateGitOpsImageTag(
+                            repoUrl: GITOPS_REPO_URL,
+                            branch: GITOPS_BRANCH,
+                            services: CHANGED_SERVICES,
+                            imageTag: env.IMAGE_TAG,
+                            valuesBaseDir: GITOPS_VALUES_BASE
+                        )
+                    }
                 }
-            }
-            steps {
-                updateGitOpsImageTag(
-                    repoUrl: GITOPS_REPO_URL,
-                    branch: GITOPS_BRANCH,
-                    services: CHANGED_SERVICES,
-                    imageTag: env.IMAGE_TAG,
-                    valuesBaseDir: GITOPS_VALUES_BASE
-                )
             }
         }
     }
 
 //     post {
 //         success {
-//             slackNotify(
-//                 status: 'SUCCESS',
-//                 channel: SLACK_CHANNEL,
-//                 services: CHANGED_SERVICES
-//             )
+//             script {
+//                 // 변경 사항이 있을 때만 슬랙 알림 전송
+//                 if (CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty()) {
+//                     slackNotify(status: 'SUCCESS', channel: SLACK_CHANNEL, services: CHANGED_SERVICES)
+//                 }
+//             }
 //         }
 //         failure {
-//             slackNotify(
-//                 status: 'FAILURE',
-//                 channel: SLACK_CHANNEL,
-//                 services: CHANGED_SERVICES
-//             )
+//             // 실패는 변경 사항 유무와 관계없이 알림 (파이프라인 자체 오류 포함)
+//             slackNotify(status: 'FAILURE', channel: SLACK_CHANNEL, services: CHANGED_SERVICES)
 //         }
 //         always {
-//             archiveArtifacts(
-//                 artifacts: 'trivy-reports/*.json',
-//                 allowEmptyArchive: true
-//             )
+//             archiveArtifacts artifacts: 'trivy-reports/*.json', allowEmptyArchive: true
 //         }
 //     }
 }
