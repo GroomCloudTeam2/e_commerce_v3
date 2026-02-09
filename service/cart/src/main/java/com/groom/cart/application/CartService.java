@@ -105,7 +105,6 @@ public class CartService {
 	/**
 	 * 내 장바구니 조회
 	 * 흐름:
-	 *
 	 * 1. Redis에서 장바구니 아이템 조회
 	 * 2. Product Service Bulk 조회
 	 * 3. API Composition

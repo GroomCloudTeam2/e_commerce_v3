@@ -58,32 +58,27 @@ pipeline {
          * ========================= */
         stage('CI/CD Process') {
             when {
-                expression { CHANGED_SERVICES && CHANGED_SERVICES.size() > 0 }
+                expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
             }
             steps {
                 script {
-
                     def parallelStages = [:]
 
                     CHANGED_SERVICES.each { svc ->
+                        parallelStages["Service :: ${svc}"] = {
 
-                        parallelStages[svc] = {
+                            podTemplate(
+                                inheritFrom: 'gradle-agent',
+                                label: "gradle-agent-${svc}-${env.BUILD_NUMBER}"
+                            ) {
+                                node("gradle-agent-${svc}-${env.BUILD_NUMBER}") {
+                                    container('gradle') {
 
-                            stage("Service :: ${svc}") {
-
-                                agent {
-                                    kubernetes {
-                                        inheritFrom 'gradle-agent'
-                                        defaultContainer 'gradle'
-                                        label "gradle-agent-${svc}-${env.BUILD_NUMBER}"
-                                    }
-                                }
-
-                                steps {
-                                    script {
+                                        // Checkout code
+                                        checkout scm
 
                                         /* ---------- Test ---------- */
-                                        stage('Test') {
+                                        stage("${svc} :: Test") {
                                             runServiceTests(
                                                 services: [svc],
                                                 excludeTags: 'Integration'
@@ -96,7 +91,7 @@ pipeline {
                                         }
 
                                         /* ---------- Build & Push ---------- */
-                                        stage('Build & Push') {
+                                        stage("${svc} :: Build & Push") {
                                             if (env.BRANCH_NAME == 'agent') {
                                                 jibBuildAndPush(
                                                     services: [svc],
@@ -110,7 +105,7 @@ pipeline {
                                         }
 
                                         /* ---------- Update GitOps ---------- */
-                                        stage('Update GitOps') {
+                                        stage("${svc} :: Update GitOps") {
                                             if (env.BRANCH_NAME == 'agent') {
                                                 updateGitOpsImageTag(
                                                     repoUrl: GITOPS_REPO_URL,
@@ -123,7 +118,6 @@ pipeline {
                                                 echo "Skipping GitOps update (branch: ${env.BRANCH_NAME})"
                                             }
                                         }
-
                                     }
                                 }
                             }
