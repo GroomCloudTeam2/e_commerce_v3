@@ -24,23 +24,18 @@ subprojects {
     if (project.path.startsWith(":service:")) {
         apply plugin: "com.google.cloud.tools.jib"
 
-        // [방법 1] jibExtensions 구성을 명시적으로 선언하여 인식 오류 방지
-        configurations {
-            jibExtensions
-        }
-
-        dependencies {
-            // CLI 없이 자바 라이브러리만으로 ECR IRSA 인증을 처리하는 확장팩
-            jibExtensions 'com.google.cloud.tools:jib-amazon-ecr-helper:0.1.0'
-        }
-
         jib {
             to {
-                // 상단 jibExtensions 라이브러리를 통해 AWS 인증 토큰을 자동으로 가져옴
-                credHelper = 'ecr-login'
+                credHelper = ''
             }
             container {
-                jvmFlags = ['-Duser.timezone=Asia/Seoul']
+                jvmFlags = [
+                        '-Duser.timezone=Asia/Seoul',
+                        '-Xms256m',
+                        '-Xmx512m'
+                ]
+                ports = ['8080']
+                format = 'OCI'
             }
         }
     }
