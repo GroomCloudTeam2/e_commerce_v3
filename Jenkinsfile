@@ -111,7 +111,7 @@ pipeline {
                                             if (env.BRANCH_NAME == 'agent') {
                                                 updateGitOpsImageTag(
                                                     repoUrl: GITOPS_REPO_URL,
-                                                    branch: main,//GITOPS_BRANCH,
+                                                    branch: 'main',//GITOPS_BRANCH,
                                                     services: [svc],
                                                     imageTag: env.IMAGE_TAG,
                                                     valuesBaseDir: GITOPS_VALUES_BASE
