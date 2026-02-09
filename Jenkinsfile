@@ -15,7 +15,6 @@ pipeline {
         GITOPS_VALUES_BASE = "services"
 
         SLACK_CHANNEL      = "#jenkins-alerts"
-
         GRADLE_USER_HOME   = "/home/jenkins/.gradle"
     }
 
@@ -28,6 +27,9 @@ pipeline {
 
     stages {
 
+        /* =========================
+         * Prepare Stage
+         * ========================= */
         stage('Prepare') {
             agent {
                 kubernetes {
@@ -51,66 +53,77 @@ pipeline {
             }
         }
 
+        /* =========================
+         * CI/CD Process (Parallel)
+         * ========================= */
         stage('CI/CD Process') {
             when {
-                expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+                expression { CHANGED_SERVICES && !CHANGED_SERVICES.size() == 0 }
             }
             steps {
                 script {
+
                     def parallelStages = [:]
 
                     CHANGED_SERVICES.each { svc ->
+
                         parallelStages[svc] = {
+
                             stage("Service :: ${svc}") {
+
                                 agent {
                                     kubernetes {
                                         inheritFrom 'gradle-agent'
                                         defaultContainer 'gradle'
-                                        // Pod 충돌 방지용 label
                                         label "gradle-agent-${svc}-${env.BUILD_NUMBER}"
                                     }
                                 }
 
-                                stages {
+                                steps {
+                                    script {
 
-                                    stage('Test') {
-                                        steps {
+                                        /* ---------- Test ---------- */
+                                        stage('Test') {
                                             runServiceTests(
                                                 services: [svc],
                                                 excludeTags: 'Integration'
                                             )
+
+                                            junit(
+                                                testResults: "**/${svc}/build/test-results/**/*.xml",
+                                                allowEmptyResults: true
+                                            )
                                         }
-                                        post {
-                                            always {
-                                                junit testResults: "**/${svc}/build/test-results/**/*.xml",
-                                                      allowEmptyResults: true
+
+                                        /* ---------- Build & Push ---------- */
+                                        stage('Build & Push') {
+                                            if (env.BRANCH_NAME == 'agent') {
+                                                jibBuildAndPush(
+                                                    services: [svc],
+                                                    imageTag: env.IMAGE_TAG,
+                                                    ecrRegistry: env.ECR_REGISTRY,
+                                                    awsRegion: env.AWS_REGION
+                                                )
+                                            } else {
+                                                echo "Skipping Build & Push (branch: ${env.BRANCH_NAME})"
                                             }
                                         }
-                                    }
 
-                                    stage('Build & Push') {
-                                        when { branch 'agent' }
-                                        steps {
-                                            jibBuildAndPush(
-                                                services: [svc],
-                                                imageTag: env.IMAGE_TAG,
-                                                ecrRegistry: env.ECR_REGISTRY,
-                                                awsRegion: env.AWS_REGION
-                                            )
+                                        /* ---------- Update GitOps ---------- */
+                                        stage('Update GitOps') {
+                                            if (env.BRANCH_NAME == 'agent') {
+                                                updateGitOpsImageTag(
+                                                    repoUrl: GITOPS_REPO_URL,
+                                                    branch: GITOPS_BRANCH,
+                                                    services: [svc],
+                                                    imageTag: env.IMAGE_TAG,
+                                                    valuesBaseDir: GITOPS_VALUES_BASE
+                                                )
+                                            } else {
+                                                echo "Skipping GitOps update (branch: ${env.BRANCH_NAME})"
+                                            }
                                         }
-                                    }
 
-                                    stage('Update GitOps') {
-                                        when { branch 'agent' }
-                                        steps {
-                                            updateGitOpsImageTag(
-                                                repoUrl: GITOPS_REPO_URL,
-                                                branch: GITOPS_BRANCH,
-                                                services: [svc],
-                                                imageTag: env.IMAGE_TAG,
-                                                valuesBaseDir: GITOPS_VALUES_BASE
-                                            )
-                                        }
                                     }
                                 }
                             }
@@ -123,6 +136,9 @@ pipeline {
         }
     }
 
+    /* =========================
+     * Post Actions (Optional)
+     * ========================= */
 //    post {
 //        success {
 //            script {
