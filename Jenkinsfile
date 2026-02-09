@@ -58,7 +58,7 @@ pipeline {
          * ========================= */
         stage('CI/CD Process') {
             when {
-                expression { CHANGED_SERVICES && !CHANGED_SERVICES.size() == 0 }
+                expression { CHANGED_SERVICES && CHANGED_SERVICES.size() > 0 }
             }
             steps {
                 script {
