@@ -11,7 +11,7 @@ pipeline {
         ECR_REGISTRY       = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
         GITOPS_REPO_URL    = "https://github.com/GroomCloudTeam2/courm-service.git"
-        GITOPS_BRANCH      = "agent"
+        GITOPS_BRANCH      = "main"
         GITOPS_VALUES_BASE = "services"
 
         SLACK_CHANNEL      = "#jenkins-alerts"
@@ -93,7 +93,7 @@ pipeline {
 
                                     /* ---------- Build & Push ---------- */
                                     stage("${svc} :: Build & Push") {
-                                        if (env.BRANCH_NAME == 'agent') {
+                                        if (env.BRANCH_NAME == 'main') {
                                             jibBuildAndPush(
                                                 services: [svc],
                                                 imageTag: env.IMAGE_TAG,
@@ -108,10 +108,10 @@ pipeline {
                                     /* ---------- Update GitOps ---------- */
                                     container('gradle') {
                                         stage("${svc} :: Update GitOps") {
-                                            if (env.BRANCH_NAME == 'agent') {
+                                            if (env.BRANCH_NAME == 'main') {
                                                 updateGitOpsImageTag(
                                                     repoUrl: GITOPS_REPO_URL,
-                                                    branch: 'main',//GITOPS_BRANCH,
+                                                    branch: GITOPS_BRANCH,
                                                     services: [svc],
                                                     imageTag: env.IMAGE_TAG,
                                                     valuesBaseDir: GITOPS_VALUES_BASE
