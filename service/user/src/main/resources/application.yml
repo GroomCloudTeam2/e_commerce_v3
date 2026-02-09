@@ -75,3 +75,25 @@ aws:
     client-id: 7dhk1lsqh5c1v9gqh1evtdlpoq
     jwk-set-uri: https://cognito-idp.ap-northeast-2.amazonaws.com/ap-northeast-2_HmqfrWP3T/.well-known/jwks.json
     client-secret: 8iqncgv83mbnmion6f06rlj4mvib1ii0adg7po283g0vss9581p
+
+# prometheus
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus   # /actuator/health, /actuator/info, /actuator/prometheus 노출
+
+  endpoint:
+    prometheus:
+      enabled: true
+
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true                # p95/p99 계산용 bucket 생성
+      percentiles:
+        http:
+          server:
+            requests: 0.5,0.95,0.99       # 퍼센타일도 직접 노출
