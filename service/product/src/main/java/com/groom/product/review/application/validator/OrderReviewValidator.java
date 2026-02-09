@@ -28,6 +28,7 @@ public class OrderReviewValidator {
 				throw new CustomException(ErrorCode.REVIEW_ALREADY_EXISTS);
 			});
 
+		//
 		// 2️⃣ Order 서비스에 리뷰 검증 요청
 		OrderReviewValidationResponse response =
 			orderClient.validateReviewOrder(
