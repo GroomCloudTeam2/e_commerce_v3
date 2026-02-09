@@ -319,6 +319,7 @@ public class CartService {
 
 	/**
 	 * 일괄 삭제 요청 DTO
+	 * 바꿨는데.
 	 */
 	@lombok.Getter
 	@lombok.AllArgsConstructor
