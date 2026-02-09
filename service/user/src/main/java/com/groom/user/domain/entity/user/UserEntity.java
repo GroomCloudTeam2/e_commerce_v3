@@ -101,6 +101,9 @@ public class UserEntity extends BaseEntity {
 		super.softDelete(deletedBy);
 	}
 
+	@Column(name = "cognito_sub")
+	private String cognitoSub;
+
 	// 기존 시그니처 유지용
 	public void withdraw() {
 		withdraw(null);
@@ -149,5 +152,19 @@ public class UserEntity extends BaseEntity {
 			throw new IllegalArgumentException(field + " must not be blank");
 		}
 		return value.trim();
+	}
+
+	/**
+	 * 이메일 인증 완료 시 PENDING → ACTIVE
+	 */
+	public void confirmEmail() {
+		if (this.status == UserStatus.PENDING) {
+			this.status = UserStatus.ACTIVE;
+		}
+	}
+
+	// 기존 메서드들에 추가
+	public void updateCognitoSub(String cognitoSub) {
+		this.cognitoSub = cognitoSub;
 	}
 }

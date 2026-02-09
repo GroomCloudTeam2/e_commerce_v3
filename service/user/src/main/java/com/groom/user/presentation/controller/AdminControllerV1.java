@@ -12,16 +12,20 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.groom.user.application.service.AdminServiceV1;
+import com.groom.user.application.service.AuthServiceV1;
 import com.groom.user.domain.entity.owner.OwnerStatus;
 import com.groom.user.presentation.dto.request.admin.ReqCreateManagerDtoV1;
 import com.groom.user.presentation.dto.request.owner.ReqRejectOwnerDtoV1;
+import com.groom.user.presentation.dto.request.user.ReqConfirmSignupDtoV1;
 import com.groom.user.presentation.dto.response.admin.ResOwnerApprovalListDtoV1;
 import com.groom.user.presentation.dto.response.owner.ResOwnerApprovalDtoV1;
+import com.groom.user.presentation.dto.response.user.ResTokenDtoV1;
 import com.groom.user.presentation.dto.response.user.ResUserDtoV1;
 import com.groom.user.presentation.dto.response.user.ResUserListDtoV1;
 
@@ -37,6 +41,7 @@ import lombok.RequiredArgsConstructor;
 public class AdminControllerV1 {
 
 	private final AdminServiceV1 adminService;
+	private final AuthServiceV1 authServiceV1;
 
 	// ==================== Manager 전용 ====================
 
