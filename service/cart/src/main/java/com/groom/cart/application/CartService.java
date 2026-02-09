@@ -50,6 +50,7 @@ public class CartService {
 	/**
 	 * 장바구니 상품 추가
 	 * 정책:
+	 *
 	 * - 판매 가능 여부만 검증
 	 * - 재고 가점유 ❌
 	 * - 수량 증가는 Redis 원자 연산(HINCRBY)
