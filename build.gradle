@@ -25,8 +25,11 @@ subprojects {
         apply plugin: "com.google.cloud.tools.jib"
 
         jib {
+            from{
+                image = 'amazoncorretto:17-alpine'
+            }
             to {
-                credHelper = ''
+                credHelper.helper = null
             }
             container {
                 jvmFlags = [
