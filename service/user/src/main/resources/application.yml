@@ -1,13 +1,11 @@
 server:
   port: 8080
 
-# 12312312312312
-
 spring:
   application:
     name: service-user
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ecommerce}
+    url: jdbc:postgresql://localhost:5432/user_db
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
@@ -26,7 +24,7 @@ spring:
       port: 6379
 
   kafka:
-    bootstrap-servers: kafka1:9092,kafka2:9092,kafka3:9092
+    bootstrap-servers: 10.0.20.101:9091,10.0.20.35:9091,10.0.21.159:9091
     #bootstrap-servers: 10.0.20.113:9092,10.0.20.89:9092,10.0.21.141:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -68,3 +66,12 @@ event:
       user: user-lifecycle
   envelope:
     version: "1.0"
+
+# cognito
+aws:
+  cognito:
+    region: ap-northeast-2
+    user-pool-id: ap-northeast-2_HmqfrWP3T
+    client-id: 7dhk1lsqh5c1v9gqh1evtdlpoq
+    jwk-set-uri: https://cognito-idp.ap-northeast-2.amazonaws.com/ap-northeast-2_HmqfrWP3T/.well-known/jwks.json
+    client-secret: 8iqncgv83mbnmion6f06rlj4mvib1ii0adg7po283g0vss9581p
