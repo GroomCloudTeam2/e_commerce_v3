@@ -33,7 +33,6 @@ import lombok.extern.slf4j.Slf4j;
  * - 상품 서비스 동기 검증
  * - 재고 검증
  * - 장바구니 유스케이스 오케스트레이션
- *
  * 책임 아님:
  * - Redis Key/Hash 구조
  * - 수량 증가 방식 (HINCRBY)
