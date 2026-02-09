@@ -27,10 +27,12 @@ subprojects {
         jib {
             from{
                 image = 'amazoncorretto:17-alpine'
+                auth{
+                    username=''
+                    password=''
+                }
             }
-            to {
-                credHelper.helper = null
-            }
+
             container {
                 jvmFlags = [
                         '-Duser.timezone=Asia/Seoul',
