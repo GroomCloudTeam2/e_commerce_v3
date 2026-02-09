@@ -13,10 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -47,6 +44,7 @@ import com.groom.order.infrastructure.kafka.OrderOutboxService;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("OrderKafkaConsumer 테스트")
+@Tag("Integration")
 class OrderKafkaConsumerTest {
 
     @Mock

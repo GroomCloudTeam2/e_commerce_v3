@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -29,6 +30,7 @@ import com.groom.user.presentation.dto.response.owner.ResSalesStatDtoV1;
 import com.groom.user.presentation.dto.response.user.ResTokenDtoV1;
 import com.groom.user.presentation.dto.response.user.ResUserDtoV1;
 import com.groom.user.presentation.dto.response.user.ResUserListDtoV1;
+@Tag("Integration")
 
 @DisplayName("DTO 및 기타 클래스 테스트")
 class DtoTest {
