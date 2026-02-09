@@ -10,7 +10,7 @@ pipeline {
         AWS_ACCOUNT_ID     = "900808296075"
         ECR_REGISTRY       = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
-        GITOPS_REPO_URL    = "https://github.com/GroomCloudTeam2/courm-services.git"
+        GITOPS_REPO_URL    = "https://github.com/GroomCloudTeam2/courm-service.git"
         GITOPS_BRANCH      = "agent"
         GITOPS_VALUES_BASE = "services"
 
