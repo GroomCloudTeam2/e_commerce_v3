@@ -72,12 +72,12 @@ pipeline {
                                 label: "gradle-agent-${svc}-${env.BUILD_NUMBER}"
                             ) {
                                 node("gradle-agent-${svc}-${env.BUILD_NUMBER}") {
+
+                                    // Checkout code
+                                    checkout scm
+
+                                    /* ---------- Test ---------- */
                                     container('gradle') {
-
-                                        // Checkout code
-                                        checkout scm
-
-                                        /* ---------- Test ---------- */
                                         stage("${svc} :: Test") {
                                             runServiceTests(
                                                 services: [svc],
@@ -89,22 +89,24 @@ pipeline {
                                                 allowEmptyResults: true
                                             )
                                         }
+                                    }
 
-                                        /* ---------- Build & Push ---------- */
-                                        stage("${svc} :: Build & Push") {
-                                            if (env.BRANCH_NAME == 'agent') {
-                                                jibBuildAndPush(
-                                                    services: [svc],
-                                                    imageTag: env.IMAGE_TAG,
-                                                    ecrRegistry: env.ECR_REGISTRY,
-                                                    awsRegion: env.AWS_REGION
-                                                )
-                                            } else {
-                                                echo "Skipping Build & Push (branch: ${env.BRANCH_NAME})"
-                                            }
+                                    /* ---------- Build & Push ---------- */
+                                    stage("${svc} :: Build & Push") {
+                                        if (env.BRANCH_NAME == 'agent') {
+                                            jibBuildAndPush(
+                                                services: [svc],
+                                                imageTag: env.IMAGE_TAG,
+                                                ecrRegistry: env.ECR_REGISTRY,
+                                                awsRegion: env.AWS_REGION
+                                            )
+                                        } else {
+                                            echo "Skipping Build & Push (branch: ${env.BRANCH_NAME})"
                                         }
+                                    }
 
-                                        /* ---------- Update GitOps ---------- */
+                                    /* ---------- Update GitOps ---------- */
+                                    container('gradle') {
                                         stage("${svc} :: Update GitOps") {
                                             if (env.BRANCH_NAME == 'agent') {
                                                 updateGitOpsImageTag(
