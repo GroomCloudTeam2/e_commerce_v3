@@ -9,21 +9,16 @@ services:
     ports:
       - "8081:8080"
     depends_on:
-      - local-db
-      - local-redis
-      - kafka1
-      - kafka2
-      - kafka3
+      local-db:
+        condition: service_healthy
+      local-redis:
+        condition: service_started
+      # kafka1, 2, 3 의존성 삭제 (외부 EC2 사용하므로)
     environment:
-      # ✅ Spring이 읽는 Kafka 설정 키로 변경
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
-      # (옵션) 혹시 코드에서 이 키를 직접 참조한다면 유지해도 됨
-      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
-
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=3.34.5.9:9094,43.201.111.33:9094,3.34.48.116:9094
+      - KAFKA_BOOTSTRAP_SERVERS=3.34.5.9:9094,43.201.111.33:9094,3.34.48.116:9094
       - SERVER_PORT=8080
-      - DB_HOST=local-db
-      - DB_PORT=5432
-      - DB_NAME=ecommerce
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://local-db:5432/ecommerce
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
 
@@ -35,15 +30,14 @@ services:
     ports:
       - "8082:8080"
     depends_on:
-      - local-db
-      - local-redis
-      - kafka1
-      - kafka2
-      - kafka3
+      local-db:
+        condition: service_healthy
+      local-redis:
+        condition: service_started
     environment:
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
-      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
-
+      # EC2 Kafka 주소
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=3.34.5.9:9094,43.201.111.33:9094,3.34.48.116:9094
+      - KAFKA_BOOTSTRAP_SERVERS=3.34.5.9:9094,43.201.111.33:9094,3.34.48.116:9094
       - SERVER_PORT=8080
       - DB_HOST=local-db
       - DB_PORT=5432
@@ -59,21 +53,19 @@ services:
     ports:
       - "8083:8080"
     depends_on:
-      - local-db
-      - local-redis
-      - kafka1
-      - kafka2
-      - kafka3
+      local-db:
+        condition: service_healthy
+      local-redis:
+        condition: service_started
     environment:
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
-      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
-
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=3.34.5.9:9094,43.201.111.33:9094,3.34.48.116:9094
+      - KAFKA_BOOTSTRAP_SERVERS=3.34.5.9:9094,43.201.111.33:9094,3.34.48.116:9094
       - SERVER_PORT=8080
       - DB_HOST=local-db
       - DB_PORT=5432
       - DB_NAME=ecommerce
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=postgres
+        - DB_USERNAME=postgres
+        - DB_PASSWORD=postgres
 
   payment:
     build:
@@ -83,15 +75,13 @@ services:
     ports:
       - "8084:8080"
     depends_on:
-      - local-db
-      - local-redis
-      - kafka1
-      - kafka2
-      - kafka3
+      local-db:
+        condition: service_healthy
+      local-redis:
+        condition: service_started
     environment:
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
-      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
-
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=3.34.5.9:9094,43.201.111.33:9094,3.34.48.116:9094
+      - KAFKA_BOOTSTRAP_SERVERS=3.34.5.9:9094,43.201.111.33:9094,3.34.48.116:9094
       - SERVER_PORT=8080
       - DB_HOST=local-db
       - DB_PORT=5432
@@ -107,15 +97,13 @@ services:
     ports:
       - "8085:8080"
     depends_on:
-      - local-db
-      - local-redis
-      - kafka1
-      - kafka2
-      - kafka3
+      local-db:
+        condition: service_healthy
+      local-redis:
+        condition: service_started
     environment:
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
-      - KAFKA_BOOTSTRAP_SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
-
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=3.34.5.9:9094,43.201.111.33:9094,3.34.48.116:9094
+      - KAFKA_BOOTSTRAP_SERVERS=3.34.5.9:9094,43.201.111.33:9094,3.34.48.116:9094
       - SERVER_PORT=8080
       - DB_HOST=local-db
       - DB_PORT=5432
@@ -133,6 +121,12 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: ecommerce
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 
   # 2) Redis
   local-redis:
@@ -141,88 +135,13 @@ services:
     ports:
       - "6379:6379"
 
-  # 3) Kafka (KRaft)
-  kafka1:
-    image: apache/kafka:4.1.1
-    container_name: kafka1
-    ports:
-      - "9093:9093"
-    environment:
-      KAFKA_CLUSTER_ID: 9ZCIjzlhTweLM-tgcDTr0A
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9091,2@kafka2:9091,3@kafka3:9091
-      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9091,EXTERNAL://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka1:9092,EXTERNAL://localhost:9093
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
-      KAFKA_MIN_INSYNC_REPLICAS: 2
-    volumes:
-      - kafka1-data:/var/lib/kafka/data
-
-  kafka2:
-    image: apache/kafka:4.1.1
-    container_name: kafka2
-    ports:
-      - "9096:9096"
-    environment:
-      KAFKA_CLUSTER_ID: 9ZCIjzlhTweLM-tgcDTr0A
-      KAFKA_NODE_ID: 2
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9091,2@kafka2:9091,3@kafka3:9091
-      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9091,EXTERNAL://0.0.0.0:9096
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka2:9092,EXTERNAL://localhost:9096
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
-      KAFKA_MIN_INSYNC_REPLICAS: 2
-    volumes:
-      - kafka2-data:/var/lib/kafka/data
-
-  kafka3:
-    image: apache/kafka:4.1.1
-    container_name: kafka3
-    ports:
-      - "9095:9095"
-    environment:
-      KAFKA_CLUSTER_ID: 9ZCIjzlhTweLM-tgcDTr0A
-      KAFKA_NODE_ID: 3
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9091,2@kafka2:9091,3@kafka3:9091
-      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9091,EXTERNAL://0.0.0.0:9095
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka3:9092,EXTERNAL://localhost:9095
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
-      KAFKA_MIN_INSYNC_REPLICAS: 2
-    volumes:
-      - kafka3-data:/var/lib/kafka/data
-
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
     ports:
       - "8090:8080"
     environment:
-      KAFKA_CLUSTERS_0_NAME: ecommerce-cluster
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka1:9092,kafka2:9092,kafka3:9092
+      KAFKA_CLUSTERS_0_NAME: ec2-kafka-cluster
+      # EC2의 퍼블릭 IP 주소들 입력
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 3.34.5.9:9094,43.201.111.33:9094,3.34.48.116:9094
       DYNAMIC_CONFIG_ENABLED: true
-    depends_on:
-      - kafka1
-      - kafka2
-      - kafka3
-
-volumes:
-  kafka1-data:
-  kafka2-data:
-  kafka3-data:

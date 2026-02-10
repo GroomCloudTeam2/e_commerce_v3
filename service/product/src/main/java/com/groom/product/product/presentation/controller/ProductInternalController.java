@@ -1,7 +1,6 @@
 package com.groom.product.product.presentation.controller;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -53,28 +52,27 @@ public class ProductInternalController {
 	 *
 	 * Request Body:
 	 * {
-	 *   "orderId": "UUID",
-	 *   "items": [{ "productId": "UUID", "variantId": "UUID (optional)", "quantity": int }]
+	 * "orderId": "UUID",
+	 * "items": [{ "productId": "UUID", "variantId": "UUID (optional)", "quantity":
+	 * int }]
 	 * }
 	 */
 	@Operation(summary = "재고 가점유", description = "주문 생성 시 재고를 가점유합니다. (Redis Lua Script)")
 	@PostMapping("/stock/reserve")
-	@SuppressWarnings("unchecked")
 	public ResponseEntity<ResStockOperationDto> reserveStock(
-		@RequestBody Map<String, Object> request
-	) {
-		UUID orderId = UUID.fromString((String) request.get("orderId"));
-		List<Map<String, Object>> items = (List<Map<String, Object>>) request.get("items");
+			@RequestBody @jakarta.validation.Valid com.groom.product.product.presentation.dto.request.ReserveStockRequest request) {
+		UUID orderId = request.getOrderId();
+		List<com.groom.product.product.presentation.dto.request.ReserveStockItem> items = request.getItems();
 
 		log.info("[Internal API] 재고 가점유 요청 - orderId: {}, items: {}", orderId, items.size());
 
 		List<StockManagement> stockManagements = items.stream()
-			.map(item -> StockManagement.of(
-				UUID.fromString((String) item.get("productId")),
-				item.get("variantId") != null ? UUID.fromString((String) item.get("variantId")) : null,
-				((Number) item.get("quantity")).intValue()
-			))
-			.toList();
+				.filter(item -> item.getProductId() != null)
+				.map(item -> StockManagement.of(
+						item.getProductId(),
+						item.getVariantId(),
+						item.getQuantity()))
+				.toList();
 
 		// 1. 재고 가점유
 		productService.reserveStockBulk(stockManagements);
@@ -94,14 +92,14 @@ public class ProductInternalController {
 	@Operation(summary = "단일 아이템 재고 가점유", description = "개별 상품의 재고를 가점유합니다.")
 	@PostMapping("/stock/reserve-single")
 	public ResponseEntity<ResStockOperationDto> reserveStockSingle(
-		@RequestBody Map<String, Object> request
-	) {
-		UUID orderId = UUID.fromString((String) request.get("orderId"));
-		UUID productId = UUID.fromString((String) request.get("productId"));
-		UUID variantId = request.get("variantId") != null ? UUID.fromString((String) request.get("variantId")) : null;
-		int quantity = ((Number) request.get("quantity")).intValue();
+			@RequestBody @jakarta.validation.Valid com.groom.product.product.presentation.dto.request.ReserveStockSingleRequest request) {
+		UUID orderId = request.getOrderId();
+		UUID productId = request.getProductId();
+		UUID variantId = request.getVariantId();
+		int quantity = request.getQuantity();
 
-		log.info("[Internal API] 단일 재고 가점유 요청 - orderId: {}, productId: {}, variantId: {}, quantity: {}", orderId, productId, variantId, quantity);
+		log.info("[Internal API] 단일 재고 가점유 요청 - orderId: {}, productId: {}, variantId: {}, quantity: {}", orderId,
+				productId, variantId, quantity);
 
 		StockManagement stockManagement = StockManagement.of(productId, variantId, quantity);
 
@@ -125,8 +123,7 @@ public class ProductInternalController {
 	@Operation(summary = "가용 재고 조회", description = "Redis에서 현재 가용 재고를 조회합니다.")
 	@GetMapping("/{productId}/stock")
 	public ResponseEntity<ResStockAvailabilityDto> getAvailableStock(
-		@PathVariable UUID productId
-	) {
+			@PathVariable UUID productId) {
 		Integer stock = productService.getAvailableStock(productId, null);
 		return ResponseEntity.ok(ResStockAvailabilityDto.of(productId, null, stock));
 	}
@@ -137,9 +134,8 @@ public class ProductInternalController {
 	@Operation(summary = "Variant 가용 재고 조회", description = "옵션 상품의 가용 재고를 조회합니다.")
 	@GetMapping("/{productId}/variants/{variantId}/stock")
 	public ResponseEntity<ResStockAvailabilityDto> getVariantAvailableStock(
-		@PathVariable UUID productId,
-		@PathVariable UUID variantId
-	) {
+			@PathVariable UUID productId,
+			@PathVariable UUID variantId) {
 		Integer stock = productService.getAvailableStock(productId, variantId);
 		return ResponseEntity.ok(ResStockAvailabilityDto.of(productId, variantId, stock));
 	}
@@ -154,8 +150,7 @@ public class ProductInternalController {
 	@Operation(summary = "상품 정보 벌크 조회", description = "여러 상품 정보를 한 번에 조회합니다. (N+1 방지)")
 	@PostMapping("/bulk-info")
 	public ResponseEntity<List<ProductCartInfo>> getProductBulkInfo(
-		@RequestBody List<StockManagement> items
-	) {
+			@RequestBody List<StockManagement> items) {
 		log.info("[Internal API] 상품 정보 벌크 조회 요청 - items: {}", items.size());
 
 		List<ProductCartInfo> productInfos = productService.getProductCartInfos(items);
