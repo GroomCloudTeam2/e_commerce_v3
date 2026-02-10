@@ -33,6 +33,15 @@ subprojects {
                 }
             }
 
+            extraDirectories {
+                paths {
+                    path {
+                        from = file("${rootProject.projectDir}/infra/otel")
+                        into = "/otel"
+                    }
+                }
+            }
+
             container {
                 jvmFlags = [
                         '-Duser.timezone=Asia/Seoul',
