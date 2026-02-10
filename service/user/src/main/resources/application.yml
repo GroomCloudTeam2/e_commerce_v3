@@ -24,7 +24,7 @@ spring:
       port: 6379
 
   kafka:
-    bootstrap-servers: 10.0.20.101:9091,10.0.20.35:9091,10.0.21.159:9091
+    bootstrap-servers: 3.34.5.9:9094,43.201.111.33:9094,3.34.48.116:9094
     #bootstrap-servers: 10.0.20.113:9092,10.0.20.89:9092,10.0.21.141:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer

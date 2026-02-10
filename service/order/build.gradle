@@ -38,3 +38,8 @@ test {
         showStandardStreams = true
     }
 }
+bootJar {
+    enabled = true
+    mainClass = 'com.groom.order.OrderApplication'
+}
+
