@@ -2,6 +2,13 @@
 
 def CHANGED_SERVICES = []
 
+/* =========================
+ * Helper
+ * ========================= */
+def chunk(List list, int size) {
+    return list.collate(size)
+}
+
 pipeline {
     agent none
 
@@ -15,7 +22,6 @@ pipeline {
         GITOPS_VALUES_BASE = "services"
 
         SLACK_CHANNEL      = "#jenkins-alerts"
-        //GRADLE_USER_HOME = "/home/jenkins/.gradle/${svc}/shared"
     }
 
     options {
@@ -28,7 +34,7 @@ pipeline {
     stages {
 
         /* =========================
-         * Prepare Stage
+         * Prepare
          * ========================= */
         stage('Prepare') {
             agent {
@@ -47,117 +53,103 @@ pipeline {
 
                     if (!CHANGED_SERVICES || CHANGED_SERVICES.isEmpty()) {
                         currentBuild.result = 'SUCCESS'
-                        error "No changed services found. Stopping pipeline gracefully."
+                        error "No changed services found. Stop pipeline."
                     }
                 }
             }
         }
 
         /* =========================
-         * CI/CD Process (Parallel)
+         * CI / CD
          * ========================= */
         stage('CI/CD Process') {
             when {
                 expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
             }
+            agent {
+                kubernetes {
+                    inheritFrom 'gradle-agent'
+                    defaultContainer 'gradle'
+                }
+            }
             steps {
                 script {
-                    def parallelStages = [:]
 
-                    CHANGED_SERVICES.each { svc ->
-                        parallelStages["Service :: ${svc}"] = {
+                    /* ---------------------
+                     * Checkout (1회)
+                     * --------------------- */
+                    checkout scm
 
-                            podTemplate(
-                                inheritFrom: 'gradle-agent',
-                                label: "gradle-agent-${svc}-${env.BUILD_NUMBER}"
-                            ) {
-                                node("gradle-agent-${svc}-${env.BUILD_NUMBER}") {
+                    /* =====================
+                     * 1. TEST (max 2 parallel)
+                     * ===================== */
+                    echo "🧪 Test stage"
 
-                                    // Checkout code
-                                    checkout scm
+                    chunk(CHANGED_SERVICES, 2).each { svcGroup ->
 
-                                    /* ---------- Test ---------- */
-                                    container('gradle') {
-                                        stage("${svc} :: Test") {
-                                            runServiceTests(
-                                                services: [svc],
-                                                excludeTags: 'Integration'
-                                            )
+                        def testStages = [:]
 
-                                            junit(
-                                                testResults: "**/${svc}/build/test-results/**/*.xml",
-                                                allowEmptyResults: true
-                                            )
-                                        }
-                                    }
+                        svcGroup.each { svc ->
+                            testStages["Test :: ${svc}"] = {
+                                stage("Test :: ${svc}") {
+                                    runServiceTests(
+                                        services: [svc],
+                                        excludeTags: 'Integration'
+                                    )
 
-                                    /* ---------- Build & Push ---------- */
-                                    stage("${svc} :: Build & Push") {
-                                        if (env.BRANCH_NAME == 'main') {
-                                            jibBuildAndPush(
-                                                services: [svc],
-                                                imageTag: env.IMAGE_TAG,
-                                                ecrRegistry: env.ECR_REGISTRY,
-                                                awsRegion: env.AWS_REGION
-                                            )
-                                        } else {
-                                            echo "Skipping Build & Push (branch: ${env.BRANCH_NAME})"
-                                        }
-                                    }
-
-                                    /* ---------- Update GitOps ---------- */
-                                    container('gradle') {
-                                        stage("${svc} :: Update GitOps") {
-                                            if (env.BRANCH_NAME == 'main') {
-
-                                                lock(resource: 'gitops-main-branch'){
-                                                    updateGitOpsImageTag(
-                                                        repoUrl: GITOPS_REPO_URL,
-                                                        branch: GITOPS_BRANCH,
-                                                        services: [svc],
-                                                        imageTag: env.IMAGE_TAG,
-                                                        valuesBaseDir: GITOPS_VALUES_BASE
-                                                    )
-                                                }
-
-                                            } else {
-                                                echo "Skipping GitOps update (branch: ${env.BRANCH_NAME})"
-                                            }
-                                        }
-                                    }
+                                    junit(
+                                        testResults: "**/${svc}/build/test-results/**/*.xml",
+                                        allowEmptyResults: true
+                                    )
                                 }
                             }
                         }
+
+                        parallel testStages
                     }
 
-                    parallel parallelStages
+                    /* =====================
+                     * 2. BUILD & PUSH (serial)
+                     * ===================== */
+                    if (env.BRANCH_NAME == 'main') {
+                        echo "🐳 Build & Push (serial)"
+
+                        CHANGED_SERVICES.each { svc ->
+                            stage("Build & Push :: ${svc}") {
+                                jibBuildAndPush(
+                                    services: [svc],
+                                    imageTag: env.IMAGE_TAG,
+                                    ecrRegistry: env.ECR_REGISTRY,
+                                    awsRegion: env.AWS_REGION
+                                )
+                            }
+                        }
+                    } else {
+                        echo "Skipping Build & Push (branch: ${env.BRANCH_NAME})"
+                    }
+
+                    /* =====================
+                     * 3. GITOPS (serial + lock)
+                     * ===================== */
+                    if (env.BRANCH_NAME == 'main') {
+                        lock(resource: 'gitops-main-branch') {
+                            CHANGED_SERVICES.each { svc ->
+                                stage("GitOps :: ${svc}") {
+                                    updateGitOpsImageTag(
+                                        repoUrl: GITOPS_REPO_URL,
+                                        branch: GITOPS_BRANCH,
+                                        services: [svc],
+                                        imageTag: env.IMAGE_TAG,
+                                        valuesBaseDir: GITOPS_VALUES_BASE
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        echo "Skipping GitOps update (branch: ${env.BRANCH_NAME})"
+                    }
                 }
             }
         }
     }
-
-    /* =========================
-     * Post Actions (Optional)
-     * ========================= */
-//    post {
-//        success {
-//            script {
-//                if (CHANGED_SERVICES) {
-//                    slackNotify(
-//                        status: 'SUCCESS',
-//                        channel: SLACK_CHANNEL,
-//                        services: CHANGED_SERVICES
-//                    )
-//                }
-//            }
-//        }
-//        failure {
-//            slackNotify(
-//                status: 'FAILURE',
-//                channel: SLACK_CHANNEL,
-//                services: CHANGED_SERVICES
-//            )
-//        }
-//    }
 }
-//
