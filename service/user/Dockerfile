@@ -1,12 +1,12 @@
 FROM eclipse-temurin:17-jre
 
 WORKDIR /app
-COPY service/user/build/libs/*.jar app.jar
+COPY build/libs/*.jar app.jar
 
-COPY opentelemetry-javaagent.jar /otel/opentelemetry-javaagent.jar
+ARG OTEL_AGENT_VER=2.20.1
+RUN mkdir -p /otel && \
+    curl -L -o /otel/opentelemetry-javaagent.jar \
+    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v${OTEL_AGENT_VER}/opentelemetry-javaagent.jar
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
-
-
-
+ENTRYPOINT ["java","-jar","app.jar"]
