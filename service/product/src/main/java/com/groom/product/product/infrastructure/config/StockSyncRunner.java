@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.groom.product.product.domain.entity.Product;
 import com.groom.product.product.domain.entity.ProductVariant;
@@ -26,11 +27,12 @@ public class StockSyncRunner implements ApplicationRunner {
     private final StockRedisService stockRedisService;
 
     @Override
+    @Transactional
     public void run(ApplicationArguments args) {
         log.info("Starting stock synchronization from DB to Redis...");
 
         try {
-            List<Product> products = productRepository.findAll();
+            List<Product> products = productRepository.findAllWithVariants();
             int syncCount = 0;
 
             for (Product product : products) {

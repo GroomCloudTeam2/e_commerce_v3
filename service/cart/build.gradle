@@ -12,4 +12,10 @@ dependencies {
     testImplementation 'org.testcontainers:junit-jupiter:1.19.7'
     // Kafka
     implementation 'org.springframework.kafka:spring-kafka'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
+}
+
+bootJar {
+    enabled = true
+    mainClass = 'com.groom.cart.CartApplication'    
 }

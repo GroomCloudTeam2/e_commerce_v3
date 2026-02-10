@@ -7,6 +7,7 @@ spring:
     name: service-cart
   datasource:
     url: jdbc:postgresql://postgres.dev.svc.cluster.local:5432/cart_db
+    # url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ecommerce}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
@@ -26,7 +27,7 @@ spring:
       port: 6379
 
   kafka:
-    bootstrap-servers: 10.0.20.101:9091,10.0.20.35:9091,10.0.21.159:9091
+    bootstrap-servers: 3.34.5.9:9094,43.201.111.33:9094,3.34.48.116:9094
     consumer:
       key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
@@ -94,3 +95,10 @@ management:
         http:
           server:
             requests: 0.5,0.95,0.99       # 퍼센타일도 직접 노출
+
+# aws:
+#   cognito:
+#     region: ap-northeast-2
+#     user-pool-id: ap-northeast-2_HmqfrWP3T
+#     client-id: umc9tvtqm0q6uhv09s0k6c9pi
+#     jwk-set-uri: https://cognito-idp.ap-northeast-2.amazonaws.com/ap-northeast-2_HmqfrWP3T/.well-known/jwks.json

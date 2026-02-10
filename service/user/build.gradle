@@ -16,10 +16,15 @@ dependencies {
     testImplementation 'org.testcontainers:postgresql:1.19.7'
     // Kafka
     implementation 'org.springframework.kafka:spring-kafka'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
     //swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
 
     // Cognito
     implementation platform('software.amazon.awssdk:bom:2.25.0')
     implementation 'software.amazon.awssdk:cognitoidentityprovider'
+}
+bootJar {
+    enabled = true
+    mainClass = 'com.groom.user.UserApplication'
 }
