@@ -5,7 +5,6 @@ spring:
   application:
     name: service-payment
   datasource:
-    #url: jdbc:postgresql://localhost:5432/payment_db
     url: jdbc:postgresql://postgres.dev.svc.cluster.local:5432/payment_db
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
