@@ -5,8 +5,7 @@ spring:
   application:
     name: service-product
   datasource:
-    # url: jdbc:postgresql://database-1.cluster-c9iosg68k3c4.ap-northeast-2.rds.amazonaws.com:5432/product_db
-    url: jdbc:postgresql://postgres:5432/product_db
+    url: jdbc:postgresql://postgres.dev.svc.cluster.local:5432/product_db
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
@@ -31,7 +30,7 @@ spring:
       port: 6379
 
   kafka:
-    bootstrap-servers: 3.34.48.116:9091,172.31.44.104:9091,172.31.44.104:9091
+    bootstrap-servers: 3.34.5.9:9094,43.201.111.33:9094,3.34.48.116:9094
     #bootstrap-servers: 10.0.20.113:9092,10.0.20.89:9092,10.0.21.141:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
