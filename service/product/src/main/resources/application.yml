@@ -6,7 +6,7 @@ spring:
     name: service-product
   datasource:
     # url: jdbc:postgresql://database-1.cluster-c9iosg68k3c4.ap-northeast-2.rds.amazonaws.com:5432/product_db
-    url: jdbc:postgresql://postgres.dev.svc.cluster.local:5432/product_db
+    url: jdbc:postgresql://postgres:5432/product_db
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver

@@ -109,13 +109,17 @@ pipeline {
                                     container('gradle') {
                                         stage("${svc} :: Update GitOps") {
                                             if (env.BRANCH_NAME == 'main') {
-                                                updateGitOpsImageTag(
-                                                    repoUrl: GITOPS_REPO_URL,
-                                                    branch: GITOPS_BRANCH,
-                                                    services: [svc],
-                                                    imageTag: env.IMAGE_TAG,
-                                                    valuesBaseDir: GITOPS_VALUES_BASE
-                                                )
+
+                                                lock(resource: 'gitops-main-branch'){
+                                                    updateGitOpsImageTag(
+                                                        repoUrl: GITOPS_REPO_URL,
+                                                        branch: GITOPS_BRANCH,
+                                                        services: [svc],
+                                                        imageTag: env.IMAGE_TAG,
+                                                        valuesBaseDir: GITOPS_VALUES_BASE
+                                                    )
+                                                }
+
                                             } else {
                                                 echo "Skipping GitOps update (branch: ${env.BRANCH_NAME})"
                                             }
