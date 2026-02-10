@@ -4,21 +4,24 @@ set -eu
 # =============================
 # CONFIG
 # =============================
+ROOT_DIR="${ROOT_DIR:-$(pwd)}"
+
 AWS_REGION="${AWS_REGION:-ap-northeast-2}"
 AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:-$(aws sts get-caller-identity --query Account --output text)}"
 ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
-REPO_PREFIX="${REPO_PREFIX:-goorm}"           # goorm-order 처럼 prefix
-SERVICES_DIR="${SERVICES_DIR:-$(pwd)/service}" # 모노레포 루트에서 실행 기준
+REPO_PREFIX="${REPO_PREFIX:-goorm}"
+SERVICES_DIR="${SERVICES_DIR:-${ROOT_DIR}/service}"
 
-# 멀티 아키텍처 플랫폼
 PLATFORMS="${PLATFORMS:-linux/amd64,linux/arm64}"
-
-# buildx builder
 BUILDER_NAME="${BUILDER_NAME:-multiarch}"
-
-# (옵션) registry cache 사용(빠르게 빌드): 1이면 cache-to/cache-from 사용
 USE_CACHE="${USE_CACHE:-0}"
+
+# ✅ OTel agent 버전(원하면 바꿔서 실행 가능)
+OTEL_AGENT_VER="${OTEL_AGENT_VER:-2.20.1}"
+
+# ✅ docker build 전에 gradle bootJar를 만들지 여부(기본 1)
+BUILD_JAR="${BUILD_JAR:-1}"
 
 # TAG: arg > git sha > timestamp
 TAG="${1:-}"
@@ -43,13 +46,11 @@ ensure_repo() {
 }
 
 ensure_buildx_builder() {
-  # buildx 존재 확인
   docker buildx version >/dev/null 2>&1 || {
-    echo "❌ docker buildx not available. (Docker Desktop 최신/Buildx 플러그인 필요)"
+    echo "❌ docker buildx not available."
     exit 1
   }
 
-  # builder가 없으면 생성
   if ! docker buildx inspect "$BUILDER_NAME" >/dev/null 2>&1; then
     echo "🛠  creating buildx builder: $BUILDER_NAME"
     docker buildx create --name "$BUILDER_NAME" --use >/dev/null
@@ -57,8 +58,22 @@ ensure_buildx_builder() {
     docker buildx use "$BUILDER_NAME" >/dev/null
   fi
 
-  # builder 부트스트랩
   docker buildx inspect --bootstrap >/dev/null
+}
+
+build_bootjar() {
+  domain="$1"
+  if [ "$BUILD_JAR" = "1" ]; then
+    echo "🏗  Gradle bootJar: :service:${domain}:bootJar"
+    # 루트에서 gradlew 실행된다는 전제 (ROOT_DIR 기준)
+    (cd "$ROOT_DIR" && ./gradlew ":service:${domain}:bootJar" -x test)
+
+    # 빌드 산출물 존재 확인
+    if [ ! -d "${SERVICES_DIR}/${domain}/build/libs" ]; then
+      echo "❌ build/libs not found: ${SERVICES_DIR}/${domain}/build/libs"
+      exit 1
+    fi
+  fi
 }
 
 build_and_push_multiarch() {
@@ -80,14 +95,15 @@ build_and_push_multiarch() {
   echo "  Context  : $context_dir"
   echo "  Platforms: $PLATFORMS"
   echo "  Tag      : $TAG"
+  echo "  OTelVer  : $OTEL_AGENT_VER"
   echo "=============================="
 
-  # (옵션) 캐시 사용
   if [ "$USE_CACHE" = "1" ]; then
     cache_ref="${ECR_REGISTRY}/${repo}:buildcache"
     docker buildx build \
       --platform "$PLATFORMS" \
       --provenance=false \
+      --build-arg "OTEL_AGENT_VER=${OTEL_AGENT_VER}" \
       --cache-from "type=registry,ref=$cache_ref" \
       --cache-to "type=registry,ref=$cache_ref,mode=max" \
       -t "$image_tag" \
@@ -98,6 +114,7 @@ build_and_push_multiarch() {
     docker buildx build \
       --platform "$PLATFORMS" \
       --provenance=false \
+      --build-arg "OTEL_AGENT_VER=${OTEL_AGENT_VER}" \
       -t "$image_tag" \
       -t "$image_latest" \
       --push \
@@ -122,7 +139,6 @@ aws ecr get-login-password --region "$AWS_REGION" \
 
 ensure_buildx_builder
 
-# 고정 도메인 5개
 for d in order product payment user cart; do
   context="${SERVICES_DIR}/${d}"
   repo="${REPO_PREFIX}-${d}"
@@ -131,6 +147,9 @@ for d in order product payment user cart; do
     echo "⚠️ skip: domain dir not found: $context"
     continue
   fi
+
+  # ✅ 도커 빌드 전에 jar 생성
+  build_bootjar "$d"
 
   ensure_repo "$repo"
   build_and_push_multiarch "$repo" "$context"
