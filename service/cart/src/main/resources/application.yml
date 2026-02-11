@@ -3,8 +3,7 @@ server:
 
 spring:
   application:
-    name: cart-service
-
+    name: service-cart
   jpa:
     hibernate:
       ddl-auto: validate   # 운영 기본값 (local에서 override)
@@ -27,6 +26,8 @@ spring:
 
       key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      group-id: cart-service-group
+      enable-auto-commit: false
 
       properties:
         spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer

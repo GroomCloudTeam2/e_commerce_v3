@@ -28,7 +28,7 @@ public class ProductEventProducer {
     private final KafkaTemplate<String, EventEnvelope> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
-    @Value("${event.kafka.topics.order:order-events}")
+    @Value("${event.kafka.topics.product:product-events}")
     private String topic;
 
     public void publishStockDeducted(StockDeductedPayload payload) {

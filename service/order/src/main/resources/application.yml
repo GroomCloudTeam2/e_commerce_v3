@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: service-cart
+    name: service-order
   datasource:
     url: jdbc:postgresql://postgres.dev.svc.cluster.local:5432/order_db
     #url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ecommerce}
@@ -37,7 +37,7 @@ spring:
     consumer:
       key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
-      group-id: service-order
+      group-id: order-service-group
       enable-auto-commit: false
       properties:
         spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
@@ -79,6 +79,8 @@ event:
   kafka:
     topics:
       order: order-events
+      payment: payment-events
+      product: product-events
   envelope:
     version: "1.0"
 
