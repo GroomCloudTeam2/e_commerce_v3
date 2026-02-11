@@ -42,7 +42,7 @@ spring:
     consumer:
       key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
-      group-id: service-product
+      group-id: product-service-group
       enable-auto-commit: false
       properties:
         spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
@@ -89,7 +89,8 @@ event:
   kafka:
     topics:
       order: order-events
-      product: product-sync
+      payment: payment-events
+      product: product-events
   envelope:
     version: "1.0"
 
