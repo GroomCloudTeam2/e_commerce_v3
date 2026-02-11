@@ -2,7 +2,6 @@ package com.groom.order.application.event;
 
 import java.time.Instant;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,19 +32,11 @@ public class OrderKafkaConsumer {
 	private final OrderOutboxService outboxService;
 	private final ObjectMapper objectMapper;
 
-	@Value("${spring.application.name}")
-	private String producer;
-
-	@KafkaListener(topics = "${event.kafka.topics.order:order-events}", groupId = "${spring.kafka.consumer.group-id}")
+	@KafkaListener(topics = { "${event.kafka.topics.payment:payment-events}",
+			"${event.kafka.topics.product:product-events}" }, groupId = "${spring.kafka.consumer.group-id}")
 	@Transactional
 	public void handle(EventEnvelope envelope, org.springframework.kafka.support.Acknowledgment ack) {
 		try {
-			if (producer.equals(envelope.getProducer())) {
-				log.debug("[Order] Skipping self-produced event: {}", envelope.getEventType());
-				ack.acknowledge();
-				return; // skip self-produced events
-			}
-
 			log.info("[Order] Processing event: type={}, id={}, aggregateId={}",
 					envelope.getEventType(), envelope.getEventId(), envelope.getAggregateId());
 

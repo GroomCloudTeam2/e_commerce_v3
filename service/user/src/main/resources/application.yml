@@ -36,7 +36,7 @@ spring:
     consumer:
       key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
-      group-id: service-user
+      group-id: user-service-group
       enable-auto-commit: false
       properties:
         spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
@@ -63,7 +63,7 @@ springdoc:
 event:
   kafka:
     topics:
-      user: user-lifecycle
+      user: user-events
   envelope:
     version: "1.0"
 
