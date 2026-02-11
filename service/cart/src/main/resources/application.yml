@@ -1,54 +1,75 @@
 server:
   port: 8080
 
+spring:
+  application:
+    name: cart-service
+
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: validate   # 운영 기본값 (local에서 override)
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+
   data:
     redis:
-      #host: localhost
-      host: local-redis
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
   kafka:
-    bootstrap-servers: 10.0.20.101:9091,10.0.20.35:9091,10.0.21.159:9091
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
     consumer:
-      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       group-id: service-cart
       enable-auto-commit: false
+      auto-offset-reset: earliest
+
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+
       properties:
         spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+
         spring.json.trusted.packages: "*"
         spring.json.value.default.type: com.groom.common.event.envelope.EventEnvelope
         spring.json.use.type.headers: false
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
+
+logging:
+  level:
+    com.groom: ${LOG_LEVEL:INFO}
+
 jwt:
-  secret: your-secret-key-should-be-at-least-256-bits-long-for-hs256
-  expiration: 3600000
+  secret: ${JWT_SECRET:local-dev-secret}
+  expiration: ${JWT_EXPIRATION:3600000}
 
-# Feign Client Configuration
-feign:
-  client:
-    config:
-      default:
-        connectTimeout: 5000
-        readTimeout: 5000
-
-# Service URLs for Feign Clients
 external:
   product-service:
     url: ${PRODUCT_SERVICE_URL:http://product:8080}
 
-logging:
-  level:
-    com.groom: DEBUG
+event:
+  kafka:
+    topics:
+      order: order-events
 
 springdoc:
   api-docs:
@@ -56,32 +77,9 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
-event:
-  kafka:
-    topics:
-      order: order-events
-  envelope:
-    version: "1.0"
-
-# prometheus
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,prometheus   # /actuator/health, /actuator/info, /actuator/prometheus 노출
-
-  endpoint:
-    prometheus:
-      enabled: true
-
-  metrics:
-    distribution:
-      percentiles-histogram:
-        http:
-          server:
-            requests: true                # p95/p99 계산용 bucket 생성
-  prometheus:
-    metrics:
-      export:
-        enabled: true
-
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 5000
