@@ -23,7 +23,8 @@ public class PaymentEventConsumer {
     private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "${event.kafka.topics.order:order-events}", groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(topics = { "${event.kafka.topics.order:order-events}",
+            "${event.kafka.topics.product:product-events}" }, groupId = "${spring.kafka.consumer.group-id}")
     public void handleEvent(EventEnvelope event, org.springframework.kafka.support.Acknowledgment ack) {
         log.debug("[ProductEventConsumer] Received event: type={}, id={}", event.getEventType(), event.getEventId());
 
