@@ -19,7 +19,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.support.Acknowledgment;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -64,16 +63,11 @@ class OrderKafkaConsumerTest {
 
     private UUID orderId;
     private UUID userId;
-    private String producerName;
 
     @BeforeEach
     void setUp() {
         orderId = UUID.randomUUID();
         userId = UUID.randomUUID();
-        producerName = "service-order";
-
-        // Set producer field using ReflectionTestUtils
-        ReflectionTestUtils.setField(orderKafkaConsumer, "producer", producerName);
     }
 
     @Nested
@@ -357,27 +351,6 @@ class OrderKafkaConsumerTest {
             // then
             assertThat(order.getStatus()).isEqualTo(OrderStatus.MANUAL_CHECK);
             then(orderRepository).should(times(1)).save(order);
-            then(acknowledgment).should(times(1)).acknowledge();
-        }
-    }
-
-    @Nested
-    @DisplayName("자기 자신이 발행한 이벤트 처리 테스트")
-    class HandleSelfProducedEventTest {
-
-        @Test
-        @DisplayName("자기 자신이 발행한 이벤트는 처리하지 않고 스킵해야 한다")
-        void handleSelfProducedEvent_ShouldSkip_Processing() throws Exception {
-            // given
-            EventEnvelope envelope = createEnvelope(EventType.ORDER_CREATED, producerName);
-
-            // when
-            orderKafkaConsumer.handle(envelope, acknowledgment);
-
-            // then
-            then(orderRepository).should(never()).findById(any());
-            then(orderRepository).should(never()).save(any());
-            then(outboxService).should(never()).save(any(), any(), any(), any(), any());
             then(acknowledgment).should(times(1)).acknowledge();
         }
     }
