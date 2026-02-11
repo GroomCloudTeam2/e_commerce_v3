@@ -110,7 +110,8 @@ management:
         http:
           server:
             requests: true                # p95/p99 계산용 bucket 생성
-      percentiles:
-        http:
-          server:
-            requests: 0.5,0.95,0.99       # 퍼센타일도 직접 노출
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
