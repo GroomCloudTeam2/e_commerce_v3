@@ -28,8 +28,6 @@ public class SecurityConfig {
 	@Value("${aws.cognito.jwk-set-uri}")
 	private String jwkSetUri;
 
-	private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
 	@Bean
 	public WebSecurityCustomizer webSecurityCustomizer() {
 		return (web) -> web.ignoring()
@@ -86,7 +84,7 @@ public class SecurityConfig {
 						.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
 						.anyRequest().authenticated())
 				// 사용자 요청 Role 필터 검사
-				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+			.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {}));
 
 		return http.build();
 	}

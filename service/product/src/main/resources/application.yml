@@ -1,11 +1,17 @@
 server:
-  port: 8080
+  port: 8082
+
+aws:
+  cognito:
+    region: ${AWS_COGNITO_REGION:ap-northeast-2}
+    jwk-set-uri: ${AWS_COGNITO_JWK_SET_URI}
 
 spring:
   application:
     name: service-product
   datasource:
-    url: jdbc:postgresql://postgres.dev.svc.cluster.local:5432/product_db
+    url: jdbc:postgresql://localhost:5432/product_db
+#    url: jdbc:postgresql://postgres.dev.svc.cluster.local:5432/product_db
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
@@ -51,9 +57,11 @@ spring:
         spring.json.value.default.type: com.groom.common.event.envelope.EventEnvelope
         spring.json.use.type.headers: false
 
-jwt:
-  secret: your-secret-key-should-be-at-least-256-bits-long-for-hs256
-  expiration: 3600000
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AWS_COGNITO_JWK_SET_URI}
 
 # Feign Client Configuration
 feign:
