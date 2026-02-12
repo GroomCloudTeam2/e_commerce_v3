@@ -5,7 +5,8 @@ spring:
   application:
     name: service-user
   datasource:
-    url: jdbc:postgresql://postgres.dev.svc.cluster.local:5432/user_db
+    url: jdbc:postgresql://localhost:5432/user_db
+#    url: jdbc:postgresql://postgres.dev.svc.cluster.local:5432/user_db
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
@@ -45,9 +46,12 @@ spring:
         spring.json.value.default.type: com.groom.common.event.envelope.EventEnvelope
         spring.json.use.type.headers: false
 
-jwt:
-  secret: your-secret-key-should-be-at-least-256-bits-long-for-hs256
-  expiration: 3600000
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://cognito-idp.${AWS_COGNITO_REGION}.amazonaws.com/${AWS_COGNITO_USER_POOL_ID}
+          jwk-set-uri: ${AWS_COGNITO_JWK_SET_URI}
 
 logging:
   level:
