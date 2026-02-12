@@ -97,6 +97,10 @@ subprojects {
         implementation 'org.springframework.boot:spring-boot-starter-actuator'
         runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
         implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+
+        // Cognito
+        implementation 'com.auth0:java-jwt:4.4.0'
+        implementation 'com.auth0:jwks-rsa:0.22.1'
     }
 
     test {
