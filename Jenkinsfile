@@ -2,6 +2,7 @@
 
 def CHANGED_SERVICES = []
 def MAX_PARALLEL = 2
+def POD_LABEL = "gradle-agent-${UUID.randomUUID().toString()}"
 
 pipeline {
     agent none
@@ -62,32 +63,26 @@ pipeline {
             }
             steps {
                 script {
-
                     CHANGED_SERVICES.collate(MAX_PARALLEL).each { batch ->
-
                         def testStages = [:]
 
                         batch.each { svc ->
                             testStages["Test :: ${svc}"] = {
-                                stage("Test :: ${svc}") {
-                                    agent {
-                                        kubernetes {
-                                            inheritFrom 'gradle-agent'
-                                            defaultContainer 'gradle'
+                                node(POD_LABEL) {
+                                    container('gradle') {
+                                        stage("Test :: ${svc}") {
+                                            checkout scm
+
+                                            runServiceTests(
+                                                services: [svc],
+                                                excludeTags: 'Integration'
+                                            )
+
+                                            junit(
+                                                testResults: "**/${svc}/build/test-results/**/*.xml",
+                                                allowEmptyResults: true
+                                            )
                                         }
-                                    }
-                                    steps {
-                                        checkout scm
-
-                                        runServiceTests(
-                                            services: [svc],
-                                            excludeTags: 'Integration'
-                                        )
-
-                                        junit(
-                                            testResults: "**/${svc}/build/test-results/**/*.xml",
-                                            allowEmptyResults: true
-                                        )
                                     }
                                 }
                             }
@@ -111,29 +106,23 @@ pipeline {
             }
             steps {
                 script {
-
                     CHANGED_SERVICES.collate(MAX_PARALLEL).each { batch ->
-
                         def buildStages = [:]
 
                         batch.each { svc ->
                             buildStages["Build & Push :: ${svc}"] = {
-                                stage("Build & Push :: ${svc}") {
-                                    agent {
-                                        kubernetes {
-                                            inheritFrom 'gradle-agent'
-                                            defaultContainer 'gradle'
-                                        }
-                                    }
-                                    steps {
-                                        checkout scm
+                                node(POD_LABEL) {
+                                    container('gradle') {
+                                        stage("Build & Push :: ${svc}") {
+                                            checkout scm
 
-                                        jibBuildAndPush(
-                                            services: [svc],
-                                            imageTag: env.IMAGE_TAG,
-                                            ecrRegistry: env.ECR_REGISTRY,
-                                            awsRegion: env.AWS_REGION
-                                        )
+                                            jibBuildAndPush(
+                                                services: [svc],
+                                                imageTag: env.IMAGE_TAG,
+                                                ecrRegistry: env.ECR_REGISTRY,
+                                                awsRegion: env.AWS_REGION
+                                            )
+                                        }
                                     }
                                 }
                             }
