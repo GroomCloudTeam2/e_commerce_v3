@@ -74,7 +74,7 @@ feign:
 # Service URLs for Feign Clients
 external:
   order-service:
-    url: ${ORDER_SERVICE_URL:http://order:8080}
+    url: ${ORDER_SERVICE_URL:http://order-service-dev-courm-app-active}
   ai:
     classification:
       url: http://localhost:8090
