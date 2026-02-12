@@ -64,7 +64,7 @@ logging:
 
 external:
   product-service:
-    url: ${PRODUCT_SERVICE_URL:http://product:8080}
+    url: ${PRODUCT_SERVICE_URL:http://product-service-dev-courm-app-active}
 
 event:
   kafka:
