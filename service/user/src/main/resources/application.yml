@@ -1,6 +1,11 @@
 server:
   port: 8080
 
+aws:
+  cognito:
+    region: ${AWS_COGNITO_REGION:ap-northeast-2}
+    jwk-set-uri: ${AWS_COGNITO_JWK_SET_URI}
+
 spring:
   application:
     name: service-user
@@ -50,7 +55,6 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://cognito-idp.${AWS_COGNITO_REGION}.amazonaws.com/${AWS_COGNITO_USER_POOL_ID}
           jwk-set-uri: ${AWS_COGNITO_JWK_SET_URI}
 
 logging:
@@ -70,15 +74,6 @@ event:
       user: user-events
   envelope:
     version: "1.0"
-
-# cognito
-aws:
-  cognito:
-    region: ap-northeast-2
-    user-pool-id: ap-northeast-2_HmqfrWP3T
-    client-id: 7dhk1lsqh5c1v9gqh1evtdlpoq
-    jwk-set-uri: https://cognito-idp.ap-northeast-2.amazonaws.com/ap-northeast-2_HmqfrWP3T/.well-known/jwks.json
-    client-secret: 8iqncgv83mbnmion6f06rlj4mvib1ii0adg7po283g0vss9581p
 
 # prometheus
 management:

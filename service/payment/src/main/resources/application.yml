@@ -1,6 +1,11 @@
 server:
   port: 8080
 
+aws:
+  cognito:
+    region: ${AWS_COGNITO_REGION:ap-northeast-2}
+    jwk-set-uri: ${AWS_COGNITO_JWK_SET_URI}
+
 spring:
   application:
     name: service-payment
