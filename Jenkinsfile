@@ -2,7 +2,6 @@
 
 def CHANGED_SERVICES = []
 def MAX_PARALLEL = 2
-def POD_LABEL = "gradle-agent-${UUID.randomUUID().toString()}"
 
 pipeline {
     agent none
@@ -67,21 +66,24 @@ pipeline {
                         def testStages = [:]
 
                         batch.each { svc ->
+                            def serviceName = svc
                             testStages["Test :: ${svc}"] = {
-                                node(POD_LABEL) {
-                                    container('gradle') {
-                                        stage("Test :: ${svc}") {
-                                            checkout scm
+                                podTemplate(inheritFrom: 'gradle-agent') {
+                                    node(POD_LABEL) {
+                                        container('gradle') {
+                                            stage("Test :: ${serviceName}") {
+                                                checkout scm
 
-                                            runServiceTests(
-                                                services: [svc],
-                                                excludeTags: 'Integration'
-                                            )
+                                                runServiceTests(
+                                                    services: [serviceName],
+                                                    excludeTags: 'Integration'
+                                                )
 
-                                            junit(
-                                                testResults: "**/${svc}/build/test-results/**/*.xml",
-                                                allowEmptyResults: true
-                                            )
+                                                junit(
+                                                    testResults: "**/${serviceName}/build/test-results/**/*.xml",
+                                                    allowEmptyResults: true
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -110,18 +112,21 @@ pipeline {
                         def buildStages = [:]
 
                         batch.each { svc ->
+                            def serviceName = svc
                             buildStages["Build & Push :: ${svc}"] = {
-                                node(POD_LABEL) {
-                                    container('gradle') {
-                                        stage("Build & Push :: ${svc}") {
-                                            checkout scm
+                                podTemplate(inheritFrom: 'gradle-agent') {
+                                    node(POD_LABEL) {
+                                        container('gradle') {
+                                            stage("Build & Push :: ${serviceName}") {
+                                                checkout scm
 
-                                            jibBuildAndPush(
-                                                services: [svc],
-                                                imageTag: env.IMAGE_TAG,
-                                                ecrRegistry: env.ECR_REGISTRY,
-                                                awsRegion: env.AWS_REGION
-                                            )
+                                                jibBuildAndPush(
+                                                    services: [serviceName],
+                                                    imageTag: env.IMAGE_TAG,
+                                                    ecrRegistry: env.ECR_REGISTRY,
+                                                    awsRegion: env.AWS_REGION
+                                                )
+                                            }
                                         }
                                     }
                                 }
