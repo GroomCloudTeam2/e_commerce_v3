@@ -16,7 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
-@Component
+// @Component
 @RequiredArgsConstructor
 // 서비스 이용 시(매 요청) 토큰 검증 + 인증정보 세팅
 // OncePerRequestFilter : 서블릿 필터의 한 종류, 하나의 HTTP 요청에 대해 1번만 실행되도록 보장
