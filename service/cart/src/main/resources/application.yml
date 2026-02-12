@@ -6,8 +6,6 @@ spring:
   application:
     name: service-cart
 
-
-
   security:
     oauth2:
       resourceserver:
