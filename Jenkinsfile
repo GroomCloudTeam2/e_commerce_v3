@@ -34,6 +34,7 @@ pipeline {
             agent {
                 kubernetes {
                     inheritFrom 'gradle-agent'
+                    namespace 'jenkins-agent'
                     defaultContainer 'gradle'
                 }
             }
@@ -68,8 +69,14 @@ pipeline {
                         batch.each { svc ->
                             def serviceName = svc
                             testStages["Test :: ${svc}"] = {
-                                podTemplate(inheritFrom: 'gradle-agent') {
-                                    node(POD_LABEL) {
+                                def label = "gradle-test-${UUID.randomUUID().toString()}"
+                                podTemplate(
+                                    label: label,
+                                    inheritFrom: 'gradle-agent',
+                                    namespace: 'jenkins-agent',
+                                    serviceAccount: 'jenkins-agent-sa'
+                                ) {
+                                    node(label) {
                                         container('gradle') {
                                             stage("Test :: ${serviceName}") {
                                                 checkout scm
@@ -114,8 +121,14 @@ pipeline {
                         batch.each { svc ->
                             def serviceName = svc
                             buildStages["Build & Push :: ${svc}"] = {
-                                podTemplate(inheritFrom: 'gradle-agent') {
-                                    node(POD_LABEL) {
+                                def label = "gradle-build-${UUID.randomUUID().toString()}"
+                                podTemplate(
+                                    label: label,
+                                    inheritFrom: 'gradle-agent',
+                                    namespace: 'jenkins-agent',
+                                    serviceAccount: 'jenkins-agent-sa'
+                                ) {
+                                    node(label) {
                                         container('gradle') {
                                             stage("Build & Push :: ${serviceName}") {
                                                 checkout scm
@@ -149,6 +162,7 @@ pipeline {
             agent {
                 kubernetes {
                     inheritFrom 'gradle-agent'
+                    namespace 'jenkins-agent'
                     defaultContainer 'gradle'
                 }
             }
