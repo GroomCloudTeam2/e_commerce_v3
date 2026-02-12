@@ -1,5 +1,5 @@
 server:
-  port: 8082
+  port: 8080
 
 aws:
   cognito:
@@ -10,8 +10,8 @@ spring:
   application:
     name: service-product
   datasource:
-    url: jdbc:postgresql://localhost:5432/product_db
-#    url: jdbc:postgresql://postgres.dev.svc.cluster.local:5432/product_db
+#    url: jdbc:postgresql://localhost:5432/product_db
+    url: jdbc:postgresql://postgres.dev.svc.cluster.local:5432/product_db
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
