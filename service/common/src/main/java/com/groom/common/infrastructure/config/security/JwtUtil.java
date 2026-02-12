@@ -42,25 +42,25 @@ public class JwtUtil {
 		this.key = Keys.hmacShaKeyFor(keyBytes);
 	}
 
-	public String generateAccessToken(UUID userId, String email, String role) {
-		return generateToken(userId, email, role, accessTokenExpiration);
-	}
-
-	public String generateRefreshToken(UUID userId, String email, String role) {
-		return generateToken(userId, email, role, refreshTokenExpiration);
-	}
-
-	private String generateToken(UUID userId, String email, String role, long expiration) {
-		Date now = new Date();
-		return Jwts.builder()
-			.setSubject(userId.toString())
-			.claim("email", email)
-			.claim("role", role)
-			.setIssuedAt(now)
-			.setExpiration(new Date(now.getTime() + expiration))
-			.signWith(key)
-			.compact();
-	}
+//	public String generateAccessToken(UUID userId, String email, String role) {
+//		return generateToken(userId, email, role, accessTokenExpiration);
+//	}
+//
+//	public String generateRefreshToken(UUID userId, String email, String role) {
+//		return generateToken(userId, email, role, refreshTokenExpiration);
+//	}
+//
+//	private String generateToken(UUID userId, String email, String role, long expiration) {
+//		Date now = new Date();
+//		return Jwts.builder()
+//			.setSubject(userId.toString())
+//			.claim("email", email)
+//			.claim("role", role)
+//			.setIssuedAt(now)
+//			.setExpiration(new Date(now.getTime() + expiration))
+//			.signWith(key)
+//			.compact();
+//	}
 
 	public UUID getUserIdFromToken(String token) {
 		return UUID.fromString(parseClaims(token).getSubject());

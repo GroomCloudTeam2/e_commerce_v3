@@ -1,33 +1,33 @@
 server:
   port: 8080
 
+
 spring:
   application:
     name: service-cart
-  jpa:
-    hibernate:
-      ddl-auto: validate   # 운영 기본값 (local에서 override)
-    properties:
-      hibernate:
-        format_sql: true
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${COGNITO_JWK_SET_URI}
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
 
+
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
     consumer:
-      group-id: service-cart
+
+      group-id: cart-service-group
       enable-auto-commit: false
       auto-offset-reset: earliest
 
       key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
-      group-id: cart-service-group
-      enable-auto-commit: false
 
       properties:
         spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
