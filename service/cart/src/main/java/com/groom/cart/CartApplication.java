@@ -11,9 +11,6 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
         exclude = {
                 DataSourceAutoConfiguration.class,
                 HibernateJpaAutoConfiguration.class
-        },
-        excludeName = {
-                "com.groom.common.infrastructure.config.security.JwtSecurityConfig"
         }
 )
 @EnableFeignClients
