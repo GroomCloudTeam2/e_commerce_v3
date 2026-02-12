@@ -7,11 +7,7 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication(
-        scanBasePackages = {"com.groom.cart", "com.groom.common"},
-        exclude = {
-                DataSourceAutoConfiguration.class,
-                HibernateJpaAutoConfiguration.class
-        }
+        scanBasePackages = {"com.groom.cart", "com.groom.common"}
 )
 @EnableFeignClients
 public class CartApplication {
