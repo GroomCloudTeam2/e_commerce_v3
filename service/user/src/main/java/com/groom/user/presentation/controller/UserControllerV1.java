@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -14,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.groom.common.infrastructure.config.security.CustomUserDetails;
 import com.groom.user.application.service.UserServiceV1;
 import com.groom.user.domain.entity.user.PeriodType;
 import com.groom.user.presentation.dto.request.user.ReqUpdateUserDtoV1;
@@ -36,14 +34,13 @@ public class UserControllerV1 {
 
 	@Operation(summary = "내 정보 조회")
 	@GetMapping
-	public ResponseEntity<ResUserDtoV1> getMe(@AuthenticationPrincipal CustomUserDetails user) {
+	public ResponseEntity<ResUserDtoV1> getMe() {
 		return ResponseEntity.ok(userService.getMe());
 	}
 
 	@Operation(summary = "내 정보 수정")
 	@PatchMapping
 	public ResponseEntity<Void> updateMe(
-			@AuthenticationPrincipal CustomUserDetails user,
 			@Valid @RequestBody ReqUpdateUserDtoV1 request) {
 		userService.updateMe(request);
 		return ResponseEntity.ok().build();
@@ -51,7 +48,7 @@ public class UserControllerV1 {
 
 	@Operation(summary = "회원 탈퇴 (Soft Delete)")
 	@DeleteMapping
-	public ResponseEntity<Void> deleteMe(@AuthenticationPrincipal CustomUserDetails user) {
+	public ResponseEntity<Void> deleteMe() {
 		userService.deleteMe();
 		return ResponseEntity.noContent().build();
 	}
@@ -59,7 +56,6 @@ public class UserControllerV1 {
 	@Operation(summary = "매출 통계 조회 (OWNER only)")
 	@GetMapping("/sales")
 	public ResponseEntity<List<ResSalesStatDtoV1>> getSalesStats(
-			@AuthenticationPrincipal CustomUserDetails user,
 			@RequestParam PeriodType periodType,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 		return ResponseEntity.ok(userService.getSalesStats(periodType, date));
