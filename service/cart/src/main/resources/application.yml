@@ -22,11 +22,11 @@ spring:
       port: ${REDIS_PORT:6379}
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
     consumer:
 
-      group-id: cart-service-group
+      group-id: ${SPRING_KAFKA_CONSUMER_GROUP_ID:cart-service-group}
       enable-auto-commit: false
       auto-offset-reset: earliest
 
@@ -70,7 +70,9 @@ external:
 event:
   kafka:
     topics:
-      order: order-events
+      order: ${KAFKA_ORDER_TOPIC:order-events}
+      payment: ${KAFKA_PAYMENT_TOPIC:payment-events}
+      product: ${KAFKA_PRODUCT_TOPIC:product-events}
 
 springdoc:
   api-docs:
@@ -84,5 +86,4 @@ feign:
       default:
         connectTimeout: 5000
         readTimeout: 5000
-
 
