@@ -18,7 +18,7 @@ spring:
           jwk-set-uri: ${COGNITO_JWK_SET_URI}
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
+      host: ${REDIS_HOST:master.courm-redis-prod.epf9hv.apn2.cache.amazonaws.com}
       port: ${REDIS_PORT:6379}
 
   kafka:

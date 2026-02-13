@@ -32,7 +32,7 @@ spring:
   data:
     redis:
       #host: localhost
-      host: local-redis
+      host: master.courm-redis-prod.epf9hv.apn2.cache.amazonaws.com
       port: 6379
 
   kafka:
