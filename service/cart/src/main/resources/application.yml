@@ -4,11 +4,12 @@ server:
 aws:
   cognito:
     region: ${AWS_COGNITO_REGION:ap-northeast-2}
-    jwk-set-uri: ${AWS_COGNITO_JWK_SET_URI}
+    jwk-set-uri: ${AWS_COGNITO_JWK_SET_URI:https://dummy}
 
 spring:
   application:
     name: service-cart
+
 
   security:
     oauth2:
@@ -83,3 +84,5 @@ feign:
       default:
         connectTimeout: 5000
         readTimeout: 5000
+
+
