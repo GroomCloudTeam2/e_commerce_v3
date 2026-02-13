@@ -50,9 +50,9 @@ public class OrderController {
 		@RequestBody OrderCreateRequest request,
 		@AuthenticationPrincipal Jwt jwt
 	) {
-		UUID buyerId = extractUserId(jwt);
+		String cognitoSub = jwt.getSubject();
 
-		UUID orderId = orderService.createOrder(buyerId, request);
+		UUID orderId = orderService.createOrder(cognitoSub, request);
 		return ResponseEntity.ok(new OrderCreateResponse(orderId));
 	}
 
@@ -62,8 +62,8 @@ public class OrderController {
 		@AuthenticationPrincipal Jwt jwt,
 		@PageableDefault(size = 10, sort = "createdAt") Pageable pageable
 	) {
-		UUID buyerId = extractUserId(jwt);
-		return ResponseEntity.ok(orderService.getMyOrders(buyerId, pageable));
+		String cognitoSub = jwt.getSubject();
+		return ResponseEntity.ok(orderService.getMyOrders(cognitoSub, pageable));
 	}
 
 	@GetMapping("/{orderId}")
@@ -83,15 +83,5 @@ public class OrderController {
 	public ResponseEntity<String> cancelOrder(@PathVariable UUID orderId) {
 		orderService.cancelOrder(orderId);
 		return ResponseEntity.ok("주문이 성공적으로 취소되었습니다.");
-	}
-
-	/**
-	 * JWT에서 사용자 ID 추출
-	 * - 기본: Cognito sub
-	 * - sub가 UUID가 아닐 수 있으니, 필요하면 claim 키로 바꿔서 쓰면 됨.
-	 */
-	private UUID extractUserId(Jwt jwt) {
-		String sub = jwt.getSubject(); // Cognito sub
-		return UUID.fromString(sub);
 	}
 }

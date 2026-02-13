@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 
 import com.groom.order.infrastructure.client.dto.UserAddressResponse;
+import com.groom.order.infrastructure.client.dto.UserIdResponse;
 
 @FeignClient(name = "user-service", url = "${external.user-service.url}", path = "/internal/users")
 public interface UserClient {
@@ -22,6 +23,13 @@ public interface UserClient {
 			@PathVariable("userId") UUID userId,
 			@RequestHeader("X-User-Id") UUID currentUserId // 필요 시 헤더 전달
 	);
+
+	/**
+	 * cognitoSub으로 사용자 조회 및 검증
+	 * - JWT sub → 실제 DB userId 매핑
+	 */
+	@GetMapping("/by-cognito-sub/{cognitoSub}")
+	UserIdResponse getUserByCognitoSub(@PathVariable("cognitoSub") String cognitoSub);
 
 	/**
 	 * 배송지 정보 조회 (스냅샷 생성용)

@@ -15,6 +15,7 @@ import com.groom.user.domain.entity.user.UserEntity;
 import com.groom.user.domain.repository.AddressRepository;
 import com.groom.user.domain.repository.UserRepository;
 import com.groom.user.presentation.dto.response.internal.UserAddressInternalResponse;
+import com.groom.user.presentation.dto.response.internal.UserIdInternalResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,6 +46,22 @@ public class UserInternalController {
 
 		log.info("[Internal API] 사용자 유효성 검증 완료 - userId: {}", userId);
 		return ResponseEntity.ok().build();
+	}
+
+	@Operation(summary = "Cognito Sub으로 사용자 조회", description = "JWT의 cognitoSub으로 사용자를 검증하고 userId를 반환합니다.")
+	@GetMapping("/by-cognito-sub/{cognitoSub}")
+	public ResponseEntity<UserIdInternalResponse> getUserByCognitoSub(@PathVariable String cognitoSub) {
+		log.info("[Internal API] cognitoSub으로 사용자 조회 요청 - cognitoSub: {}", cognitoSub);
+
+		UserEntity user = userRepository.findByCognitoSubAndDeletedAtIsNull(cognitoSub)
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+		if (user.isWithdrawn()) {
+			throw new CustomException(ErrorCode.ALREADY_WITHDRAWN);
+		}
+
+		log.info("[Internal API] cognitoSub으로 사용자 조회 완료 - userId: {}", user.getUserId());
+		return ResponseEntity.ok(new UserIdInternalResponse(user.getUserId()));
 	}
 
 	@Operation(summary = "사용자 배송지 조회", description = "주문 스냅샷용 기본 배송지 정보를 조회합니다.")

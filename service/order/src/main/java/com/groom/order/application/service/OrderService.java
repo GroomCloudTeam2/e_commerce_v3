@@ -45,9 +45,9 @@ public class OrderService {
 	 * 주문을 생성하고, OrderCreatedEvent를 Outbox에 저장합니다.
 	 */
 	@Transactional
-	public UUID createOrder(UUID userId, OrderCreateRequest request) {
-		// 1. 사용자 검증 (Synchronous)
-		userClient.isValidUser(userId, userId);
+	public UUID createOrder(String cognitoSub, OrderCreateRequest request) {
+		// 1. cognitoSub으로 사용자 검증 및 실제 userId 조회
+		UUID userId = userClient.getUserByCognitoSub(cognitoSub).getUserId();
 
 		// 2. 주소 정보 조회 (Snapshot용)
 		UserAddressResponse address = userClient.getUserAddress(userId, userId);
@@ -116,7 +116,8 @@ public class OrderService {
 		return datePart + "-" + randomPart;
 	}
 
-	public Page<OrderResponse> getMyOrders(UUID buyerId, Pageable pageable) {
+	public Page<OrderResponse> getMyOrders(String cognitoSub, Pageable pageable) {
+		UUID buyerId = userClient.getUserByCognitoSub(cognitoSub).getUserId();
 		return orderRepository.findAllByBuyerId(buyerId, pageable)
 				.map(OrderResponse::from);
 	}

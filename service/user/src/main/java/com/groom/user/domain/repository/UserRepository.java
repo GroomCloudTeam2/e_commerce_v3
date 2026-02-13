@@ -29,6 +29,8 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
 	Optional<UserEntity> findByUserIdAndDeletedAtIsNull(UUID userId);
 
+	Optional<UserEntity> findByCognitoSubAndDeletedAtIsNull(String cognitoSub);
+
 	Optional<UserEntity> findByEmailAndDeletedAtIsNull(String email);
 
 	// Manager용: 회원 목록 조회
