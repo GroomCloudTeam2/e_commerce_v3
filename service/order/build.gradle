@@ -8,7 +8,8 @@ dependencies {
 
     // [추가!] 스웨거 UI 라이브러리 (이게 없으면 경로 자체가 생성 안 됩니다)
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.3'
-    
+
+
     // Database
     runtimeOnly 'org.postgresql:postgresql'
     

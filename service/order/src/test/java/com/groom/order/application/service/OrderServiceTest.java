@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
@@ -38,6 +39,7 @@ import com.groom.order.infrastructure.client.ProductClient;
 import com.groom.order.infrastructure.client.UserClient;
 import com.groom.order.infrastructure.client.dto.StockReserveRequest;
 import com.groom.order.infrastructure.client.dto.UserAddressResponse;
+import com.groom.order.infrastructure.client.dto.UserIdResponse;
 import com.groom.order.infrastructure.kafka.OrderOutboxService;
 import com.groom.order.presentation.dto.internal.OrderValidationResponse;
 import com.groom.order.presentation.dto.request.OrderCreateItemRequest;
@@ -69,6 +71,7 @@ class OrderServiceTest {
     private OrderService orderService;
 
     private UUID userId;
+    private String cognitoSub;
     private UUID productId;
     private UUID variantId;
     private Long totalAmount;
@@ -76,9 +79,11 @@ class OrderServiceTest {
     @BeforeEach
     void setUp() {
         userId = UUID.randomUUID();
+        cognitoSub = "test-cognito-sub";
         productId = UUID.randomUUID();
         variantId = UUID.randomUUID();
         totalAmount = 50000L;
+        lenient().when(userClient.getUserByCognitoSub(cognitoSub)).thenReturn(new UserIdResponse(userId));
     }
 
     @Nested
@@ -95,13 +100,13 @@ class OrderServiceTest {
             given(userClient.getUserAddress(userId, userId)).willReturn(address);
 
             // when
-            UUID orderId = orderService.createOrder(userId, request);
+            UUID orderId = orderService.createOrder(cognitoSub, request);
 
             // then
             assertThat(orderId).isNotNull();
 
             // verify interactions
-            then(userClient).should(times(1)).isValidUser(userId, userId);
+            then(userClient).should(times(1)).getUserByCognitoSub(cognitoSub);
             then(userClient).should(times(1)).getUserAddress(userId, userId);
             then(productClient).should(times(1)).reserveStock(any(StockReserveRequest.class));
             then(orderRepository).should(times(1)).save(any(Order.class));
@@ -114,7 +119,7 @@ class OrderServiceTest {
         }
 
         @Test
-        @DisplayName("주문 생성 시 사용자 검증을 수행해야 한다")
+        @DisplayName("주문 생성 시 cognitoSub으로 사용자를 조회해야 한다")
         void createOrder_ShouldValidate_User() {
             // given
             OrderCreateRequest request = createOrderRequest();
@@ -123,10 +128,10 @@ class OrderServiceTest {
             given(userClient.getUserAddress(userId, userId)).willReturn(address);
 
             // when
-            orderService.createOrder(userId, request);
+            orderService.createOrder(cognitoSub, request);
 
             // then
-            then(userClient).should(times(1)).isValidUser(userId, userId);
+            then(userClient).should(times(1)).getUserByCognitoSub(cognitoSub);
         }
 
         @Test
@@ -139,7 +144,7 @@ class OrderServiceTest {
             given(userClient.getUserAddress(userId, userId)).willReturn(address);
 
             // when
-            orderService.createOrder(userId, request);
+            orderService.createOrder(cognitoSub, request);
 
             // then
             then(userClient).should(times(1)).getUserAddress(userId, userId);
@@ -155,7 +160,7 @@ class OrderServiceTest {
             given(userClient.getUserAddress(userId, userId)).willReturn(address);
 
             // when
-            orderService.createOrder(userId, request);
+            orderService.createOrder(cognitoSub, request);
 
             // then
             then(productClient).should(times(1)).reserveStock(
@@ -178,7 +183,7 @@ class OrderServiceTest {
             given(userClient.getUserAddress(userId, userId)).willReturn(address);
 
             // when
-            orderService.createOrder(userId, request);
+            orderService.createOrder(cognitoSub, request);
 
             // then
             then(orderRepository).should(times(1)).save(
@@ -203,7 +208,7 @@ class OrderServiceTest {
             given(userClient.getUserAddress(userId, userId)).willReturn(address);
 
             // when
-            orderService.createOrder(userId, request);
+            orderService.createOrder(cognitoSub, request);
 
             // then
             then(outboxService).should(times(1)).save(
@@ -229,7 +234,7 @@ class OrderServiceTest {
             given(userClient.getUserAddress(userId, userId)).willReturn(address);
 
             // when
-            orderService.createOrder(userId, request);
+            orderService.createOrder(cognitoSub, request);
 
             // then
             then(orderRepository).should(times(1)).save(
@@ -247,10 +252,10 @@ class OrderServiceTest {
             OrderCreateRequest request = createOrderRequest();
 
             doThrow(new IllegalArgumentException("유효하지 않은 사용자입니다"))
-                    .when(userClient).isValidUser(userId, userId);
+                    .when(userClient).getUserByCognitoSub(cognitoSub);
 
             // when & then
-            assertThatThrownBy(() -> orderService.createOrder(userId, request))
+            assertThatThrownBy(() -> orderService.createOrder(cognitoSub, request))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("유효하지 않은 사용자입니다");
 
@@ -272,7 +277,7 @@ class OrderServiceTest {
                     .when(productClient).reserveStock(any(StockReserveRequest.class));
 
             // when & then
-            assertThatThrownBy(() -> orderService.createOrder(userId, request))
+            assertThatThrownBy(() -> orderService.createOrder(cognitoSub, request))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("재고가 부족합니다");
 
@@ -298,7 +303,7 @@ class OrderServiceTest {
             given(orderRepository.findAllByBuyerId(userId, pageable)).willReturn(orderPage);
 
             // when
-            Page<OrderResponse> result = orderService.getMyOrders(userId, pageable);
+            Page<OrderResponse> result = orderService.getMyOrders(cognitoSub, pageable);
 
             // then
             assertThat(result).isNotNull();
@@ -318,7 +323,7 @@ class OrderServiceTest {
             given(orderRepository.findAllByBuyerId(userId, pageable)).willReturn(emptyPage);
 
             // when
-            Page<OrderResponse> result = orderService.getMyOrders(userId, pageable);
+            Page<OrderResponse> result = orderService.getMyOrders(cognitoSub, pageable);
 
             // then
             assertThat(result).isNotNull();
