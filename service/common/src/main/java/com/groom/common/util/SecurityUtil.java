@@ -101,6 +101,7 @@ public class SecurityUtil {
 		return null;
 	}
 
+
 	private static UserRole parseRole(String role) {
 		try {
 			return UserRole.valueOf(role.trim().toUpperCase());
