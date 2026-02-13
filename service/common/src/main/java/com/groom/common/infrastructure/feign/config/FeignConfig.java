@@ -34,10 +34,9 @@ public class FeignConfig {
         return template -> {
             String targetUrl = template.feignTarget().url();
 
-            // 내부 MSA 요청의 경우 Bearer 토큰 적용 (필요 시)
+            // 내부 MSA 요청은 인증 불필요 (/internal/** 은 permitAll)
             template.removeHeader("Authorization");
-            template.header("Authorization", "Bearer dummy");
-            log.debug(">>> [Feign-Global] Internal API. Bearer Token Applied to {}", targetUrl);
+            log.debug(">>> [Feign-Global] Internal API call to {}", targetUrl);
         };
     }
 
