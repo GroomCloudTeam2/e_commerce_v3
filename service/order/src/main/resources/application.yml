@@ -67,9 +67,9 @@ feign:
 # Service URLs for Feign Clients
 external:
   user-service:
-    url: ${USER_SERVICE_URL:http://user-service.dev.svc.cluster.local:8080}
+    url: ${USER_SERVICE_URL:http://user-service-dev-courm-app-active}
   product-service:
-    url: ${PRODUCT_SERVICE_URL:http://product-service.dev.svc.cluster.local:8080}
+    url: ${PRODUCT_SERVICE_URL:http://product-service-dev-courm-app-active}
 
 logging:
   level:
