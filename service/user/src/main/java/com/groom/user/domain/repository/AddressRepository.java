@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.groom.user.domain.entity.address.AddressEntity;
+import com.groom.user.domain.entity.user.UserEntity;
 
 @Repository
 public interface AddressRepository extends JpaRepository<AddressEntity, UUID> {
@@ -24,4 +25,5 @@ public interface AddressRepository extends JpaRepository<AddressEntity, UUID> {
 	@Modifying
 	@Query("UPDATE AddressEntity a SET a.isDefault = false WHERE a.user.userId = :userId AND a.isDefault = true")
 	void clearDefaultAddress(@Param("userId") UUID userId);
+
 }

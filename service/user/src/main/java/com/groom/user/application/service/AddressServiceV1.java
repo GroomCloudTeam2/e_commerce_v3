@@ -11,6 +11,7 @@ import com.groom.common.presentation.advice.ErrorCode;
 import com.groom.user.domain.entity.address.AddressEntity;
 import com.groom.user.domain.entity.user.UserEntity;
 import com.groom.user.domain.repository.AddressRepository;
+import com.groom.user.domain.repository.UserRepository;
 import com.groom.user.presentation.dto.request.address.ReqAddressDtoV1;
 import com.groom.user.presentation.dto.response.address.ResAddressDtoV1;
 
@@ -24,7 +25,47 @@ import lombok.extern.slf4j.Slf4j;
 public class AddressServiceV1 {
 
 	private final AddressRepository addressRepository;
+	private final UserRepository userRepository;
 	private final UserServiceV1 userService;
+
+	public List<ResAddressDtoV1> getAddressesByCognitoSub(String cognitoSub) {
+		UUID userId = userRepository.findByCognitoSub(cognitoSub)
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND))
+			.getUserId();
+		return getAddresses(userId);
+	}
+
+	@Transactional
+	public void createAddressByCognitoSub(String cognitoSub, ReqAddressDtoV1 request) {
+		UUID userId = userRepository.findByCognitoSub(cognitoSub)
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND))
+			.getUserId();
+		createAddress(userId, request);
+	}
+
+	@Transactional
+	public void updateAddressByCognitoSub(String cognitoSub, UUID addressId, ReqAddressDtoV1 request) {
+		UUID userId = userRepository.findByCognitoSub(cognitoSub)
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND))
+			.getUserId();
+		updateAddress(userId, addressId, request);
+	}
+
+	@Transactional
+	public void deleteAddressByCognitoSub(String cognitoSub, UUID addressId) {
+		UUID userId = userRepository.findByCognitoSub(cognitoSub)
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND))
+			.getUserId();
+		deleteAddress(userId, addressId);
+	}
+
+	@Transactional
+	public void setDefaultAddressByCognitoSub(String cognitoSub, UUID addressId) {
+		UUID userId = userRepository.findByCognitoSub(cognitoSub)
+			.orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND))
+			.getUserId();
+		setDefaultAddress(userId, addressId);
+	}
 
 	public List<ResAddressDtoV1> getAddresses(UUID userId) {
 		return addressRepository.findByUserUserId(userId).stream()
@@ -42,8 +83,8 @@ public class AddressServiceV1 {
 
 		AddressEntity address = AddressEntity.builder()
 			.user(user)
-			.recipient(request.getRecipient()) // 추가
-			.recipientPhone(request.getRecipientPhone()) // 추가
+			.recipient(request.getRecipient())
+			.recipientPhone(request.getRecipientPhone())
 			.zipCode(request.getZipCode())
 			.address(request.getAddress())
 			.detailAddress(request.getDetailAddress())
@@ -66,8 +107,8 @@ public class AddressServiceV1 {
 			request.getZipCode(),
 			request.getAddress(),
 			request.getDetailAddress(),
-			request.getRecipient(),       // <-- 추가됨 (String)
-			request.getRecipientPhone(),  // <-- 추가됨 (String)
+			request.getRecipient(),
+			request.getRecipientPhone(),
 			request.getIsDefault()
 		);
 

@@ -37,4 +37,6 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 	Page<UserEntity> findByDeletedAtIsNull(Pageable pageable);
 
 	Page<UserEntity> findByRoleAndDeletedAtIsNull(UserRole role, Pageable pageable);
+
+	Optional<UserEntity> findByCognitoSub(String cognitoSub);
 }
