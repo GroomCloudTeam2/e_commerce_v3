@@ -63,7 +63,7 @@ public class SecurityConfig {
 				.requestMatchers("/api/v2/products", "/api/v2/products/{productId}").permitAll()
 				.requestMatchers("/api/v1/internal/**").permitAll()
 				.requestMatchers("/api/v2/internal/**").permitAll()
-				.requestMatchers("/actuator/**","/internal/**").permitAll()
+				.requestMatchers("/actuator/**", "/api/actuator/**", "/internal/**").permitAll()
 				.requestMatchers("/api/v2/categories", "/api/v2/categories/{categoryId}").permitAll()
 				.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 				.requestMatchers("/", "/favicon.ico", "/error").permitAll()
