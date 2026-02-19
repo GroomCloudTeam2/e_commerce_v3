@@ -16,6 +16,7 @@ pipeline {
         GITOPS_VALUES_BASE = "services"
 
         SLACK_CHANNEL      = "#jenkins-alerts"
+        GRADLE_OPTS        = "-Dorg.gradle.daemon=false -Dorg.gradle.vfs.watch=false"
     }
 
     options {
@@ -81,10 +82,15 @@ pipeline {
 //                                             stage("Test :: ${serviceName}") {
 //                                                 checkout scm
 //
-//                                                 runServiceTests(
-//                                                     services: [serviceName],
-//                                                     excludeTags: 'Integration'
-//                                                 )
+//                                                 withEnv([
+//                                                     "GRADLE_USER_HOME=${pwd()}/.gradle-cache/${env.JOB_NAME}/${env.BRANCH_NAME}/${serviceName}-test"
+//                                                 ]) {
+//                                                     sh 'mkdir -p "$GRADLE_USER_HOME"'
+//                                                     runServiceTests(
+//                                                         services: [serviceName],
+//                                                         excludeTags: 'Integration'
+//                                                     )
+//                                                 }
 //
 //                                                 junit(
 //                                                     testResults: "**/${serviceName}/build/test-results/**/*.xml",
@@ -133,12 +139,17 @@ pipeline {
                                             stage("Build & Push :: ${serviceName}") {
                                                 checkout scm
 
-                                                jibBuildAndPush(
-                                                    services: [serviceName],
-                                                    imageTag: env.IMAGE_TAG,
-                                                    ecrRegistry: env.ECR_REGISTRY,
-                                                    awsRegion: env.AWS_REGION
-                                                )
+                                                withEnv([
+                                                    "GRADLE_USER_HOME=${pwd()}/.gradle-cache/${env.JOB_NAME}/${env.BRANCH_NAME}/${serviceName}-build"
+                                                ]) {
+                                                    sh 'mkdir -p "$GRADLE_USER_HOME"'
+                                                    jibBuildAndPush(
+                                                        services: [serviceName],
+                                                        imageTag: env.IMAGE_TAG,
+                                                        ecrRegistry: env.ECR_REGISTRY,
+                                                        awsRegion: env.AWS_REGION
+                                                    )
+                                                }
                                             }
                                         }
                                     }
