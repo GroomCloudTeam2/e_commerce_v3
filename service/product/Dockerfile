@@ -10,7 +10,7 @@ RUN curl -fL --retry 3 -o opentelemetry-javaagent.jar \
 # 2) 런타임
 FROM eclipse-temurin:17-jre
 WORKDIR /app
-COPY build/libs/*.jar app.jar
+COPY service/product/build/libs/*.jar app.jar
 
 COPY --from=otel /tmp/opentelemetry-javaagent.jar /otel/opentelemetry-javaagent.jar
 
