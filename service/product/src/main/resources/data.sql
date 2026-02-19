@@ -622,3 +622,99 @@ VALUES
     NULL,
     NULL
 ) ON CONFLICT (product_id) DO NOTHING;
+
+-- Increase stock by +100 for load-test-friendly seed state.
+-- Keep SOLD_OUT products untouched.
+UPDATE p_product
+SET
+    stock_quantity = stock_quantity + 100,
+    updated_at = NOW(),
+    updated_by = 'system-stock-boost'
+WHERE
+    status = 'ON_SALE';
+
+-- Dedicated stable products for k6 load test.
+-- These IDs are referenced by k6_e2e_flow.js default FIXED_PRODUCT_IDS.
+INSERT INTO
+    p_product (
+        product_id,
+        owner_id,
+        category_id,
+        title,
+        description,
+        thumbnail_url,
+        status,
+        has_options,
+        price,
+        stock_quantity,
+        suspend_reason,
+        suspended_at,
+        created_at,
+        created_by,
+        updated_at,
+        updated_by,
+        deleted_at,
+        deleted_by
+    )
+VALUES
+    (
+        'a0000000-0000-0000-0000-000000001001',
+        'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+        '33333333-3333-3333-3333-333333333335',
+        'K6 Load Snack A',
+        'Load test stable product A',
+        'https://images.loadtest.local/k6-a.jpg',
+        'ON_SALE',
+        false,
+        12000,
+        2000,
+        NULL,
+        NULL,
+        NOW(),
+        'system',
+        NOW(),
+        'system',
+        NULL,
+        NULL
+    ),
+    (
+        'a0000000-0000-0000-0000-000000001002',
+        'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+        '33333333-3333-3333-3333-333333333335',
+        'K6 Load Snack B',
+        'Load test stable product B',
+        'https://images.loadtest.local/k6-b.jpg',
+        'ON_SALE',
+        false,
+        13000,
+        2000,
+        NULL,
+        NULL,
+        NOW(),
+        'system',
+        NOW(),
+        'system',
+        NULL,
+        NULL
+    ),
+    (
+        'a0000000-0000-0000-0000-000000001003',
+        'cccccccc-cccc-cccc-cccc-cccccccccccc',
+        '33333333-3333-3333-3333-333333333335',
+        'K6 Load Snack C',
+        'Load test stable product C',
+        'https://images.loadtest.local/k6-c.jpg',
+        'ON_SALE',
+        false,
+        14000,
+        2000,
+        NULL,
+        NULL,
+        NOW(),
+        'system',
+        NOW(),
+        'system',
+        NULL,
+        NULL
+    )
+ON CONFLICT (product_id) DO NOTHING;
