@@ -322,6 +322,7 @@ public class CartService {
 	 * 바꿨는데.
 	 */
 	@lombok.Getter
+	@lombok.NoArgsConstructor
 	@lombok.AllArgsConstructor
 	public static class CartItemDeleteRequest {
 		private UUID productId;
