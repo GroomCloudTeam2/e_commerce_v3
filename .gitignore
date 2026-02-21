@@ -26,3 +26,4 @@ logs/
 # secret
 *.env
 
+tmp/

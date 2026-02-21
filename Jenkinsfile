@@ -58,56 +58,56 @@ pipeline {
         /* =========================
          * 2. TEST (Pod-level parallel, max 2)
          * ========================= */
-//         stage('Test') {
-//             when {
-//                 expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
-//             }
-//             steps {
-//                 script {
-//                     CHANGED_SERVICES.collate(MAX_PARALLEL).each { batch ->
-//                         def testStages = [:]
-//
-//                         batch.each { svc ->
-//                             def serviceName = svc
-//                             testStages["Test :: ${svc}"] = {
-//                                 def label = "gradle-test-${UUID.randomUUID().toString()}"
-//                                 podTemplate(
-//                                     label: label,
-//                                     inheritFrom: 'gradle-agent',
-//                                     namespace: 'jenkins-agent',
-//                                     serviceAccount: 'jenkins-agent-sa'
-//                                 ) {
-//                                     node(label) {
-//                                         container('gradle') {
-//                                             stage("Test :: ${serviceName}") {
-//                                                 checkout scm
-//
-//                                                 withEnv([
-//                                                     "GRADLE_USER_HOME=${pwd()}/.gradle-cache/${env.JOB_NAME}/${env.BRANCH_NAME}/${serviceName}-test"
-//                                                 ]) {
-//                                                     sh 'mkdir -p "$GRADLE_USER_HOME"'
-//                                                     runServiceTests(
-//                                                         services: [serviceName],
-//                                                         excludeTags: 'Integration'
-//                                                     )
-//                                                 }
-//
-//                                                 junit(
-//                                                     testResults: "**/${serviceName}/build/test-results/**/*.xml",
-//                                                     allowEmptyResults: true
-//                                                 )
-//                                             }
-//                                         }
-//                                     }
-//                                 }
-//                             }
-//                         }
-//
-//                         parallel testStages
-//                     }
-//                 }
-//             }
-//         }
+        stage('Test') {
+            when {
+                expression { CHANGED_SERVICES && !CHANGED_SERVICES.isEmpty() }
+            }
+            steps {
+                script {
+                    CHANGED_SERVICES.collate(MAX_PARALLEL).each { batch ->
+                        def testStages = [:]
+
+                        batch.each { svc ->
+                            def serviceName = svc
+                            testStages["Test :: ${svc}"] = {
+                                def label = "gradle-test-${UUID.randomUUID().toString()}"
+                                podTemplate(
+                                    label: label,
+                                    inheritFrom: 'gradle-agent',
+                                    namespace: 'jenkins-agent',
+                                    serviceAccount: 'jenkins-agent-sa'
+                                ) {
+                                    node(label) {
+                                        container('gradle') {
+                                            stage("Test :: ${serviceName}") {
+                                                checkout scm
+
+                                                withEnv([
+                                                    "GRADLE_USER_HOME=${pwd()}/.gradle-cache/${env.JOB_NAME}/${env.BRANCH_NAME}/${serviceName}-test"
+                                                ]) {
+                                                    sh 'mkdir -p "$GRADLE_USER_HOME"'
+                                                    runServiceTests(
+                                                        services: [serviceName],
+                                                        excludeTags: 'Integration'
+                                                    )
+                                                }
+
+                                                junit(
+                                                    testResults: "**/${serviceName}/build/test-results/**/*.xml",
+                                                    allowEmptyResults: true
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        parallel testStages
+                    }
+                }
+            }
+        }
 
         /* =========================
          * 3. BUILD & PUSH (Pod-level parallel, max 2)
