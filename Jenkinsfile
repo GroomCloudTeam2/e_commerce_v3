@@ -10,6 +10,7 @@ pipeline {
         AWS_REGION         = "ap-northeast-2"
         AWS_ACCOUNT_ID     = "900808296075"
         ECR_REGISTRY       = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        GRADLE_CACHE_ROOT  = "/gradle-cache"
 
         GITOPS_REPO_URL    = "https://github.com/GroomCloudTeam2/courm-service.git"
         GITOPS_BRANCH      = "main"
@@ -83,7 +84,7 @@ pipeline {
                                                 checkout scm
 
                                                 withEnv([
-                                                    "GRADLE_USER_HOME=${pwd()}/.gradle-cache/${env.JOB_NAME}/${env.BRANCH_NAME}/${serviceName}-test"
+                                                    "GRADLE_USER_HOME=${env.GRADLE_CACHE_ROOT}/${env.JOB_NAME}/${env.BRANCH_NAME}/${serviceName}-test"
                                                 ]) {
                                                     sh 'mkdir -p "$GRADLE_USER_HOME"'
                                                     runServiceTests(
@@ -148,7 +149,7 @@ pipeline {
 
                                             container('gradle') {
                                                 withEnv([
-                                                    "GRADLE_USER_HOME=${pwd()}/.gradle-cache/${env.JOB_NAME}/${env.BRANCH_NAME}/${serviceName}-build"
+                                                    "GRADLE_USER_HOME=${env.GRADLE_CACHE_ROOT}/${env.JOB_NAME}/${env.BRANCH_NAME}/${serviceName}-build"
                                                 ]) {
                                                     sh 'mkdir -p "$GRADLE_USER_HOME"'
                                                     jibBuildAndPush(
