@@ -135,10 +135,18 @@ pipeline {
                                     serviceAccount: 'jenkins-agent-sa'
                                 ) {
                                     node(label) {
-                                        container('gradle') {
-                                            stage("Build & Push :: ${serviceName}") {
-                                                checkout scm
+                                        stage("Build & Push :: ${serviceName}") {
+                                            checkout scm
 
+                                            def ecrPassword = ''
+                                            container('aws-cli') {
+                                                ecrPassword = sh(
+                                                    script: "aws ecr get-login-password --region ${env.AWS_REGION}",
+                                                    returnStdout: true
+                                                ).trim()
+                                            }
+
+                                            container('gradle') {
                                                 withEnv([
                                                     "GRADLE_USER_HOME=${pwd()}/.gradle-cache/${env.JOB_NAME}/${env.BRANCH_NAME}/${serviceName}-build"
                                                 ]) {
@@ -147,7 +155,8 @@ pipeline {
                                                         services: [serviceName],
                                                         imageTag: env.IMAGE_TAG,
                                                         ecrRegistry: env.ECR_REGISTRY,
-                                                        awsRegion: env.AWS_REGION
+                                                        awsRegion: env.AWS_REGION,
+                                                        ecrPassword: ecrPassword
                                                     )
                                                 }
                                             }
