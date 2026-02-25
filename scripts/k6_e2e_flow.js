@@ -69,10 +69,15 @@ const HOST_CART = __ENV.HOST_CART || 'cart-dev.example.com';
 const HOST_ORDER = __ENV.HOST_ORDER || 'order-dev.example.com';
 const HOST_PAYMENT = __ENV.HOST_PAYMENT || 'payment-dev.example.com';
 const HOST_USER = __ENV.HOST_USER || 'user-dev.example.com';
+const CART_CLEAR_MODE = (__ENV.CART_CLEAR_MODE || 'event').trim().toLowerCase(); // event | manual
+const EVENT_WAIT_TIMEOUT_SEC = Number(__ENV.EVENT_WAIT_TIMEOUT_SEC || 30);
+const EVENT_WAIT_POLL_MS = Number(__ENV.EVENT_WAIT_POLL_MS || 500);
 const PRODUCT_ID = (__ENV.PRODUCT_ID || __ENV.FIXED_PRODUCT_ID || 'a0000000-0000-0000-0000-000000001001').trim();
 const paymentReadyRetryFailures = new Counter('payment_ready_retry_failures');
 const txCompleted = new Counter('tx_completed');
 const orderCreateRetryFailures = new Counter('order_create_retry_failures');
+const orderConfirmedWaitTimeouts = new Counter('order_confirmed_wait_timeouts');
+const cartEventClearWaitTimeouts = new Counter('cart_event_clear_wait_timeouts');
 
 if (!TOKEN && TOKENS.length === 0) {
   fail('Either TOKEN or TOKEN_LIST env is required');
@@ -95,6 +100,36 @@ function req(method, host, path, body, expectedStatuses, token) {
   }
   const res = http.request(method, `${BASE_URL}${path}`, payload, params);
   return res;
+}
+
+function waitForOrderConfirmed(orderId, token) {
+  const deadline = Date.now() + (EVENT_WAIT_TIMEOUT_SEC * 1000);
+  while (Date.now() < deadline) {
+    const res = req('GET', HOST_ORDER, `/api/v2/orders/${orderId}`, undefined, [200], token);
+    if (res.status === 200) {
+      const status = res.json()?.status ?? '';
+      if (status === 'CONFIRMED') {
+        return true;
+      }
+    }
+    sleep(EVENT_WAIT_POLL_MS / 1000);
+  }
+  return false;
+}
+
+function waitForCartEmpty(token) {
+  const deadline = Date.now() + (EVENT_WAIT_TIMEOUT_SEC * 1000);
+  while (Date.now() < deadline) {
+    const res = req('GET', HOST_CART, '/api/v2/cart', undefined, undefined, token);
+    if (res.status === 200) {
+      const cart = res.json();
+      if (Array.isArray(cart) && cart.length === 0) {
+        return true;
+      }
+    }
+    sleep(EVENT_WAIT_POLL_MS / 1000);
+  }
+  return false;
 }
 
 export function e2eFlow() {
@@ -218,18 +253,34 @@ export function e2eFlow() {
   }
   if (!readyOk) fail(`STEP6 failed: payments/ready not 200, last=${res.status} ${res.body}`);
 
-  const deleteItems = cart.map((x) => ({
-    productId: x.productId,
-    variantId: x.variantId ?? null,
-  }));
-  res = req('DELETE', HOST_CART, '/api/v2/cart/items/bulk', deleteItems, undefined, token);
-  check(res, { 'STEP7 cart clear code=204': (r) => r.status === 204 }) || fail(`STEP7 failed: ${res.status} ${res.body}`);
+  if (CART_CLEAR_MODE === 'manual') {
+    const deleteItems = cart.map((x) => ({
+      productId: x.productId,
+      variantId: x.variantId ?? null,
+    }));
+    res = req('DELETE', HOST_CART, '/api/v2/cart/items/bulk', deleteItems, undefined, token);
+    check(res, { 'STEP7 cart clear code=204': (r) => r.status === 204 }) || fail(`STEP7 failed: ${res.status} ${res.body}`);
 
-  res = req('GET', HOST_CART, '/api/v2/cart', undefined, undefined, token);
-  check(res, { 'STEP8 cart empty code=200': (r) => r.status === 200 }) || fail(`STEP8 failed: ${res.status} ${res.body}`);
-  const finalCart = res.json();
-  if (!Array.isArray(finalCart) || finalCart.length !== 0) {
-    fail(`STEP8 failed: cart not empty body=${res.body}`);
+    res = req('GET', HOST_CART, '/api/v2/cart', undefined, undefined, token);
+    check(res, { 'STEP8 cart empty code=200': (r) => r.status === 200 }) || fail(`STEP8 failed: ${res.status} ${res.body}`);
+    const finalCart = res.json();
+    if (!Array.isArray(finalCart) || finalCart.length !== 0) {
+      fail(`STEP8 failed: cart not empty body=${res.body}`);
+    }
+  } else {
+    const orderConfirmed = waitForOrderConfirmed(orderId, token);
+    if (!orderConfirmed) {
+      orderConfirmedWaitTimeouts.add(1);
+    }
+    check({ ok: orderConfirmed }, { 'STEP7 order confirmed by event': (x) => x.ok === true })
+      || fail(`STEP7 failed: order not CONFIRMED within ${EVENT_WAIT_TIMEOUT_SEC}s (orderId=${orderId})`);
+
+    const cartEmptyByEvent = waitForCartEmpty(token);
+    if (!cartEmptyByEvent) {
+      cartEventClearWaitTimeouts.add(1);
+    }
+    check({ ok: cartEmptyByEvent }, { 'STEP8 cart emptied by event': (x) => x.ok === true })
+      || fail(`STEP8 failed: cart not empty within ${EVENT_WAIT_TIMEOUT_SEC}s after event chain`);
   }
 
   txCompleted.add(1);
