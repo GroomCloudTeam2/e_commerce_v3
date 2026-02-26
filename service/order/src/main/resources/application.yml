@@ -15,10 +15,14 @@ spring:
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      mode: always
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+    defer-datasource-initialization: true
     properties:
       hibernate:
         format_sql: true
@@ -93,6 +97,10 @@ event:
 outbox:
   publisher:
     delay-ms: 1000
+    batch-size: 100
+  cleaner:
+    delay-ms: 60000
+    retention-hours: 24
 
 # prometheus
 management:

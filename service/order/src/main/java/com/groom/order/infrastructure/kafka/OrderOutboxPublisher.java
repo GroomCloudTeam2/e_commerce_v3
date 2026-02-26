@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.groom.common.event.Type.EventType;
 import com.groom.common.event.envelope.EventEnvelope;
-import com.groom.common.outbox.OutboxStatus;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,10 +26,13 @@ public class OrderOutboxPublisher {
 	@Value("${event.kafka.topics.order:order-events}")
 	private String topic;
 
+	@Value("${outbox.publisher.batch-size:100}")
+	private int batchSize;
+
 	@Scheduled(fixedDelayString = "${outbox.publisher.delay-ms:1000}")
 	@Transactional
 	public void publish() {
-		List<OrderOutbox> batch = outboxRepository.findTop100ByStatusOrderByCreatedAt(OutboxStatus.INIT);
+		List<OrderOutbox> batch = outboxRepository.findBatchForPublish(batchSize);
 		if (batch.isEmpty()) {
 			return;
 		}

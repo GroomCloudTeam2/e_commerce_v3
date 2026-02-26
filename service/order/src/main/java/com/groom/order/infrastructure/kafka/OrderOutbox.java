@@ -6,6 +6,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
@@ -22,7 +23,9 @@ import org.hibernate.type.SqlTypes;
 @Entity
 @Getter
 @NoArgsConstructor
-@Table(name = "order_outbox")
+@Table(name = "order_outbox", indexes = {
+        @Index(name = "idx_outbox_init_created_at", columnList = "created_at")
+})
 public class OrderOutbox {
 
     @Id

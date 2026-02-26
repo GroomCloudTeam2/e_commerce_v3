@@ -35,32 +35,22 @@ public class OrderKafkaConsumer {
 	@KafkaListener(topics = { "${event.kafka.topics.payment:payment-events}",
 			"${event.kafka.topics.product:product-events}" }, groupId = "${spring.kafka.consumer.group-id}")
 	@Transactional
-	public void handle(EventEnvelope envelope, org.springframework.kafka.support.Acknowledgment ack) {
-		try {
-			log.info("[Order] Processing event: type={}, id={}, aggregateId={}",
-					envelope.getEventType(), envelope.getEventId(), envelope.getAggregateId());
+	public void handle(EventEnvelope envelope) {
+		log.info("[Order] Processing event: type={}, id={}, aggregateId={}",
+				envelope.getEventType(), envelope.getEventId(), envelope.getAggregateId());
 
-			EventType eventType = envelope.getEventType();
-			switch (eventType) {
-				case PAYMENT_COMPLETED -> handlePaymentCompleted(envelope);
-				case STOCK_DEDUCTED -> handleStockDeducted(envelope);
-				case PAYMENT_FAILED -> handlePaymentFailed(envelope);
-				case STOCK_DEDUCTION_FAILED -> handleStockDeductionFailed(envelope);
-				case REFUND_SUCCEEDED -> handleRefundSucceeded(envelope);
-				case REFUND_FAILED -> handleRefundFailed(envelope);
-				default -> log.debug("[Order] Unhandled event type: {}", eventType);
-			}
-
-			ack.acknowledge();
-			log.debug("[Order] Successfully processed and acknowledged event: {}", envelope.getEventType());
-		} catch (Exception e) {
-			log.error("[Order] Failed to process event: type={}, id={}, error={}",
-					envelope.getEventType(), envelope.getEventId(), e.getMessage(), e);
-			// Acknowledge even on failure to prevent infinite retry
-			// Failed events should be handled by dead letter queue or manual intervention
-			ack.acknowledge();
-			log.warn("[Order] Acknowledged failed event to prevent retry: {}", envelope.getEventId());
+		EventType eventType = envelope.getEventType();
+		switch (eventType) {
+			case PAYMENT_COMPLETED -> handlePaymentCompleted(envelope);
+			case STOCK_DEDUCTED -> handleStockDeducted(envelope);
+			case PAYMENT_FAILED -> handlePaymentFailed(envelope);
+			case STOCK_DEDUCTION_FAILED -> handleStockDeductionFailed(envelope);
+			case REFUND_SUCCEEDED -> handleRefundSucceeded(envelope);
+			case REFUND_FAILED -> handleRefundFailed(envelope);
+			default -> log.debug("[Order] Unhandled event type: {}", eventType);
 		}
+
+		log.debug("[Order] Successfully processed event: {}", envelope.getEventType());
 	}
 
 	private void handlePaymentCompleted(EventEnvelope envelope) {
@@ -88,6 +78,15 @@ public class OrderKafkaConsumer {
 				OrderConfirmedPayload.builder()
 						.orderId(payload.getOrderId())
 						.userId(order.getBuyerId())
+						.totalAmount(order.getTotalPaymentAmount())
+						.items(order.getItems().stream()
+								.map(item -> com.groom.common.event.payload.OrderConfirmedItemPayload.builder()
+										.productId(item.getProductId())
+										.ownerId(item.getOwnerId())
+										.subtotal(item.getSubtotal())
+										.quantity(item.getQuantity())
+										.build())
+								.collect(java.util.stream.Collectors.toList()))
 						.confirmedAt(Instant.now())
 						.build());
 	}

@@ -1,6 +1,5 @@
 package com.groom.common.event.payload;
 
-import java.time.Instant;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,10 +10,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderConfirmedPayload {
-	private UUID orderId;
-	private UUID userId;
-	private Long totalAmount;
-	private java.util.List<OrderConfirmedItemPayload> items;
-	private Instant confirmedAt;
+public class OrderConfirmedItemPayload {
+    private UUID productId;
+    private UUID ownerId;
+    private Long subtotal;
+    private Integer quantity;
 }

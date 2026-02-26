@@ -4,7 +4,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groom.common.event.Type.EventType;
 import com.groom.common.event.envelope.EventEnvelope;
@@ -25,8 +24,8 @@ public class PaymentEventConsumer {
 
     @KafkaListener(topics = { "${event.kafka.topics.order:order-events}",
             "${event.kafka.topics.product:product-events}" }, groupId = "${spring.kafka.consumer.group-id}")
-    public void handleEvent(EventEnvelope event, org.springframework.kafka.support.Acknowledgment ack) {
-        log.debug("[ProductEventConsumer] Received event: type={}, id={}", event.getEventType(), event.getEventId());
+    public void handleEvent(EventEnvelope event) {
+        log.debug("[PaymentEventConsumer] Received event: type={}, id={}", event.getEventType(), event.getEventId());
 
         try {
             if (event.getEventType() == EventType.ORDER_CREATED) {
@@ -48,10 +47,9 @@ public class PaymentEventConsumer {
             } else {
                 log.info("[PaymentEventConsumer] Ignored event type: {}", event.getEventType());
             }
-            ack.acknowledge();
-        } catch (JsonProcessingException e) {
-            log.error("[PaymentEventConsumer] Failed to deserialize payload for event type: {}", event.getEventType(),
-                    e);
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                    "Failed to process event: type=" + event.getEventType() + ", id=" + event.getEventId(), e);
         }
     }
 }

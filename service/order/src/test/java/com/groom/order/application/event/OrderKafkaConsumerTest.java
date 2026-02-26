@@ -1,6 +1,7 @@
 package com.groom.order.application.event;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -18,7 +19,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.kafka.support.Acknowledgment;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,6 +40,8 @@ import com.groom.order.infrastructure.kafka.OrderOutboxService;
  * OrderKafkaConsumer 단위 테스트
  * 
  * Kafka 이벤트 처리 로직을 Mock을 사용하여 검증합니다.
+ * 예외 발생 시 DefaultErrorHandler가 재시도/DLT 처리를 할 수 있도록
+ * 예외가 전파되는지 검증합니다.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("OrderKafkaConsumer 테스트")
@@ -54,9 +56,6 @@ class OrderKafkaConsumerTest {
 
     @Mock
     private ObjectMapper objectMapper;
-
-    @Mock
-    private Acknowledgment acknowledgment;
 
     @InjectMocks
     private OrderKafkaConsumer orderKafkaConsumer;
@@ -91,17 +90,16 @@ class OrderKafkaConsumerTest {
             given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 
             // when
-            orderKafkaConsumer.handle(envelope, acknowledgment);
+            orderKafkaConsumer.handle(envelope);
 
             // then
             assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
             then(orderRepository).should(times(1)).save(order);
-            then(acknowledgment).should(times(1)).acknowledge();
         }
 
         @Test
-        @DisplayName("존재하지 않는 Order에 대한 PAYMENT_COMPLETED 이벤트 수신 시 예외가 발생해도 ACK 해야 한다")
-        void handlePaymentCompleted_WhenOrderNotFound_ShouldAcknowledge() throws Exception {
+        @DisplayName("존재하지 않는 Order에 대한 PAYMENT_COMPLETED 이벤트 수신 시 예외가 전파되어야 한다")
+        void handlePaymentCompleted_WhenOrderNotFound_ShouldThrowException() throws Exception {
             // given
             EventEnvelope envelope = createEnvelope(EventType.PAYMENT_COMPLETED, "service-payment");
             PaymentCompletedPayload payload = PaymentCompletedPayload.builder()
@@ -114,12 +112,10 @@ class OrderKafkaConsumerTest {
                     .willReturn(payload);
             given(orderRepository.findById(orderId)).willReturn(Optional.empty());
 
-            // when
-            orderKafkaConsumer.handle(envelope, acknowledgment);
-
-            // then
+            // when & then - 예외가 전파되어 DefaultErrorHandler가 재시도/DLT 처리
+            assertThatThrownBy(() -> orderKafkaConsumer.handle(envelope))
+                    .isInstanceOf(IllegalStateException.class);
             then(orderRepository).should(never()).save(any());
-            then(acknowledgment).should(times(1)).acknowledge();
         }
     }
 
@@ -150,12 +146,11 @@ class OrderKafkaConsumerTest {
             given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 
             // when
-            orderKafkaConsumer.handle(envelope, acknowledgment);
+            orderKafkaConsumer.handle(envelope);
 
             // then
             assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
             then(orderRepository).should(times(1)).save(order);
-            then(acknowledgment).should(times(1)).acknowledge();
         }
 
         @Test
@@ -181,7 +176,7 @@ class OrderKafkaConsumerTest {
             given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 
             // when
-            orderKafkaConsumer.handle(envelope, acknowledgment);
+            orderKafkaConsumer.handle(envelope);
 
             // then
             then(outboxService).should(times(1)).save(
@@ -221,12 +216,11 @@ class OrderKafkaConsumerTest {
             given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 
             // when
-            orderKafkaConsumer.handle(envelope, acknowledgment);
+            orderKafkaConsumer.handle(envelope);
 
             // then
             assertThat(order.getStatus()).isEqualTo(OrderStatus.FAILED);
             then(orderRepository).should(times(1)).save(order);
-            then(acknowledgment).should(times(1)).acknowledge();
         }
 
         @Test
@@ -248,7 +242,7 @@ class OrderKafkaConsumerTest {
             given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 
             // when
-            orderKafkaConsumer.handle(envelope, acknowledgment);
+            orderKafkaConsumer.handle(envelope);
 
             // then
             then(outboxService).should(never()).save(any(), any(), any(), any(), any());
@@ -284,12 +278,11 @@ class OrderKafkaConsumerTest {
             given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 
             // when
-            orderKafkaConsumer.handle(envelope, acknowledgment);
+            orderKafkaConsumer.handle(envelope);
 
             // then
             assertThat(order.getStatus()).isEqualTo(OrderStatus.FAILED);
             then(orderRepository).should(times(1)).save(order);
-            then(acknowledgment).should(times(1)).acknowledge();
         }
     }
 
@@ -314,12 +307,11 @@ class OrderKafkaConsumerTest {
             given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 
             // when
-            orderKafkaConsumer.handle(envelope, acknowledgment);
+            orderKafkaConsumer.handle(envelope);
 
             // then
             assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
             then(orderRepository).should(times(1)).save(order);
-            then(acknowledgment).should(times(1)).acknowledge();
         }
     }
 
@@ -346,12 +338,11 @@ class OrderKafkaConsumerTest {
             given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 
             // when
-            orderKafkaConsumer.handle(envelope, acknowledgment);
+            orderKafkaConsumer.handle(envelope);
 
             // then
             assertThat(order.getStatus()).isEqualTo(OrderStatus.MANUAL_CHECK);
             then(orderRepository).should(times(1)).save(order);
-            then(acknowledgment).should(times(1)).acknowledge();
         }
     }
 
@@ -360,29 +351,28 @@ class OrderKafkaConsumerTest {
     class HandleUnhandledEventTypeTest {
 
         @Test
-        @DisplayName("처리되지 않는 이벤트 타입은 무시하고 ACK만 해야 한다")
-        void handleUnhandledEventType_ShouldIgnore_AndAcknowledge() {
+        @DisplayName("처리되지 않는 이벤트 타입은 무시하고 정상 반환해야 한다")
+        void handleUnhandledEventType_ShouldIgnore() {
             // given
             EventEnvelope envelope = createEnvelope(EventType.ORDER_CREATED, "service-other");
 
             // when
-            orderKafkaConsumer.handle(envelope, acknowledgment);
+            orderKafkaConsumer.handle(envelope);
 
             // then
             then(orderRepository).should(never()).findById(any());
             then(orderRepository).should(never()).save(any());
             then(outboxService).should(never()).save(any(), any(), any(), any(), any());
-            then(acknowledgment).should(times(1)).acknowledge();
         }
     }
 
     @Nested
-    @DisplayName("Payload 역직렬화 실패 테스트")
-    class PayloadDeserializationFailureTest {
+    @DisplayName("예외 전파 테스트 (DefaultErrorHandler 연동)")
+    class ExceptionPropagationTest {
 
         @Test
-        @DisplayName("Payload 역직렬화 실패 시에도 ACK 해야 한다")
-        void whenPayloadDeserializationFails_ShouldAcknowledge() throws Exception {
+        @DisplayName("Payload 역직렬화 실패 시 예외가 전파되어야 한다 (DefaultErrorHandler가 재시도/DLT 처리)")
+        void whenPayloadDeserializationFails_ShouldThrowException() throws Exception {
             // given
             EventEnvelope envelope = createEnvelope(EventType.PAYMENT_COMPLETED, "service-payment");
 
@@ -390,45 +380,15 @@ class OrderKafkaConsumerTest {
                     .willThrow(new JsonProcessingException("Invalid JSON") {
                     });
 
-            // when
-            orderKafkaConsumer.handle(envelope, acknowledgment);
-
-            // then
-            then(orderRepository).should(never()).save(any());
-            then(acknowledgment).should(times(1)).acknowledge();
-        }
-    }
-
-    @Nested
-    @DisplayName("ACK 검증 테스트")
-    class AcknowledgmentTest {
-
-        @Test
-        @DisplayName("정상 처리 시 ACK를 호출해야 한다")
-        void whenEventProcessedSuccessfully_ShouldAcknowledge() throws Exception {
-            // given
-            Order order = createOrder(OrderStatus.PENDING);
-            EventEnvelope envelope = createEnvelope(EventType.PAYMENT_COMPLETED, "service-payment");
-            PaymentCompletedPayload payload = PaymentCompletedPayload.builder()
-                    .orderId(orderId)
-                    .paymentKey("test-payment-key")
-                    .amount(50000L)
-                    .build();
-
-            given(objectMapper.readValue(envelope.getPayload(), PaymentCompletedPayload.class))
-                    .willReturn(payload);
-            given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
-
-            // when
-            orderKafkaConsumer.handle(envelope, acknowledgment);
-
-            // then
-            then(acknowledgment).should(times(1)).acknowledge();
+            // when & then
+            assertThatThrownBy(() -> orderKafkaConsumer.handle(envelope))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasCauseInstanceOf(JsonProcessingException.class);
         }
 
         @Test
-        @DisplayName("처리 실패 시에도 ACK를 호출해야 한다")
-        void whenEventProcessingFails_ShouldStillAcknowledge() throws Exception {
+        @DisplayName("DB 오류 시 예외가 전파되어야 한다 (DefaultErrorHandler가 재시도/DLT 처리)")
+        void whenDatabaseErrorOccurs_ShouldThrowException() throws Exception {
             // given
             EventEnvelope envelope = createEnvelope(EventType.PAYMENT_COMPLETED, "service-payment");
             PaymentCompletedPayload payload = PaymentCompletedPayload.builder()
@@ -442,11 +402,10 @@ class OrderKafkaConsumerTest {
             given(orderRepository.findById(orderId))
                     .willThrow(new RuntimeException("Database error"));
 
-            // when
-            orderKafkaConsumer.handle(envelope, acknowledgment);
-
-            // then
-            then(acknowledgment).should(times(1)).acknowledge();
+            // when & then
+            assertThatThrownBy(() -> orderKafkaConsumer.handle(envelope))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Database error");
         }
     }
 

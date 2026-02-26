@@ -102,8 +102,8 @@ public class KafkaConfig {
                 ConcurrentKafkaListenerContainerFactory<String, EventEnvelope> factory = new ConcurrentKafkaListenerContainerFactory<>();
                 factory.setConsumerFactory(consumerFactory());
 
-                // Manual Immediate Ack Mode (데이터 정합성 최우선)
-                factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
+                // Record Ack Mode: 성공 시 자동 커밋, 예외 시 DefaultErrorHandler가 재시도/DLT 처리
+                factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
 
                 // Error Handling & Recovery (Retry + DLT)
                 // 1초 간격, 최대 3회 재시도 (FixedBackOff)
